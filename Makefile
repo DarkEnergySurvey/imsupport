@@ -2,6 +2,9 @@ SHELL=/bin/sh
 
 DIRS=lib include ups src
 
+# ups conflicts with AS-IS, but is targeted for future stacks
+INSTALLDIRS=lib include
+
 #
 #  PREFIX is used solely for the install target, right?
 #
@@ -30,4 +33,4 @@ install: tidy
 	if [ -z "$(PREFIX)" ] ; then echo install area not defined; exit 1 ; fi
 	echo about to install under $(PREFIX)
 	sleep 5
-	for d in $(DIRS) ; do  mkdir -p $(PREFIX)/$$d ; cp $$d/* $(PREFIX)/$$d  ; done
+	for d in $(INSTALLDIRS) ; do  mkdir -p $(PREFIX)/$$d ; cp $$d/* $(PREFIX)/$$d  ; done
