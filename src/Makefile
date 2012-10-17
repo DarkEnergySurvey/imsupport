@@ -19,7 +19,7 @@ OBJECTS=imarithsubs.o archivesubs.o catsubs.o  db_utils.o eventsubs.o imreadsubs
 
 STANDALONEOBJECTS=imarithsubs.o archivesubs.o catsubs.o eventsubs.o imreadsubs.o subs_fits.o subs_memory.o subs_inoutput.o wcssubs.o readstdstable.o ImageMorphology.o LegacyInterface.o ComLine.o primitive_utilities.o System.o MorphologyCX.o argutils.o
 
-CFLAGS +=  -I../include -I$(FITSIO_BASE)/include/ -I$(FITSIO_BASE)/include/wcs/ -I$(FITSIO_BASE)/include/psfex/
+CFLAGS +=  -I../include -I$(FITSIO_BASE)/include/ -I$(FITSIO_BASE)/include/wcs/ -I$(FITSIO_BASE)/include/psfex/ -I$(FITSIO_BASE)/include/fits/
 
 CPPC := 	g++
 CPPFLAGS:=      -g -O3 -I. -I../include -I$(FITSIO_BASE)/include
