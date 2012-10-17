@@ -1,5 +1,15 @@
 
-setupRequired(cfitsio)
+#
+# RIght now, we depent on the DESMD Stack
+# FUrnther eups-ifcation might provide a detailed 
+# list of products.
+#
+setupRequired(desdmstack 6.3.2)
+
+#
+# We have no binarys, and out software is deliveed
+# as an archive and linked into programs. 
+#
 
 # envAppend(PATH, ${PRODUCT_DIR}/bin)
 # envAppend(LD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
