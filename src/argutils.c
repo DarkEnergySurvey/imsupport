@@ -20,7 +20,7 @@ int build_command_line(int argc,char *argv[],char *command_line,int limit)
     else
       break;
   }
-  if(argc != 0)
+  if(argcc != argc)
     retval *= -1;
   return(retval);
 }

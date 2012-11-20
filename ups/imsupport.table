@@ -4,7 +4,7 @@
 # FUrnther eups-ifcation might provide a detailed 
 # list of products.
 #
-setupRequired(desdmstack 6.3.2)
+setupRequired(desdmstack 7.0.0)
 
 #
 # We have no binarys, and out software is deliveed

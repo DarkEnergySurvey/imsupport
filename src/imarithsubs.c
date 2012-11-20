@@ -672,7 +672,7 @@ void OverScan(desimage *input_image,desimage *output_image,
 	      overscan_config osconfig,int flag_verbose)
 {
   float sum0,sum1,min0,min1,max0,max1,value0,value1;
-  float stddev0,stddev1;
+  float chisqr,stddev0,stddev1;
   float *vecsort0          = NULL;
   float *vecsort1          = NULL;
   float *overscan0         = NULL;
@@ -686,7 +686,6 @@ void OverScan(desimage *input_image,desimage *output_image,
   float *y2nd1             = NULL;
   float *xfitspline0       = NULL;
   float *xfitspline1       = NULL;
-  float *chisqr            = NULL;
   float **covar            = NULL;
   float *coeff0            = NULL;
   float *coeff1            = NULL;
