@@ -1419,7 +1419,10 @@ void headercheck(image,filter,ccdnum,keyword,flag_verbose)
 	  /* simply transfer filter if it hasn't already been read */
 	  if (!strlen(filter)) sprintf(filter,"%s",newfilter);
 	  else {
-	    if (strncmp(filter,newfilter,strlen(filter))) {
+/*          RAG 2012Nov26: changed comparison so that it matches first character of the FILTER
+                           keyword, to prevent detailed filter information from throwing a STATUS4 */
+/*	    if (strncmp(filter,newfilter,strlen(filter))) { */
+	    if (strncmp(filter,newfilter,1)) { 
 	      sprintf(event,"Image %s FILTER %s != current filter %s",
 	        image->name,newfilter,filter);
 	      reportevt(flag_verbose,STATUS,4,event);
