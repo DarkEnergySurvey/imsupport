@@ -99,12 +99,13 @@ void copy_desimage(desimage *destination,desimage *source)
   }
   if(source->varim){
     destination->varim = (float *)calloc(imsize,sizeof(float));
-    memcpy(destination->image,source->image,imsize*sizeof(float));
+    memcpy(destination->varim,source->varim,imsize*sizeof(float));
   }
   if(source->mask){
     destination->mask = (short *)calloc(imsize,sizeof(short));
     memcpy(destination->mask,source->mask,imsize*sizeof(short));
   }
+  printf("done\n");
 }
 
 void rd_desimage(desimage *image,int mode,int flag_verbose)
