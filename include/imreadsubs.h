@@ -40,6 +40,7 @@ typedef struct {
 void printerror(int status);
 void init_desimage(desimage *image);
 void destroy_desimage(desimage *image);
+void copy_desimage(desimage *destination,desimage *src);
 void rd_desimage(desimage *image, int mode, int flag_verbose);
 void rd_dessubimage(desimage *image, long *lx, long *ux, int mode, int flag_verbose);
 int check_image_name(char name[], int mode, int flag_verbose);

@@ -47,6 +47,66 @@ void destroy_desimage(desimage *image)
   init_desimage(image);
 }
 
+// (Safely) destroys any data in destination.
+void copy_desimage(desimage *destination,desimage *source)
+{
+  destroy_desimage(destination);
+  destination->fptr = source->fptr;
+  strncpy(destination->name,source->name,1000);
+  strncpy(destination->biasseca,source->biasseca,100);
+  strncpy(destination->ampseca,source->ampseca,100);
+  strncpy(destination->dataseca,source->dataseca,100);
+  strncpy(destination->biassecb,source->biassecb,100);
+  strncpy(destination->ampsecb,source->ampsecb,100);
+  strncpy(destination->datasecb,source->datasecb,100);
+  strncpy(destination->trimsec,source->trimsec,100);
+  strncpy(destination->datasec,source->datasec,100);
+  destination->bscale       = source->bscale;
+  destination->bzero        = source->bzero;
+  destination->bitpix       = source->bitpix;
+  destination->npixels      = source->npixels;
+  destination->fpixel       = source->fpixel;
+  destination->saturateA    = source->saturateA;
+  destination->saturateB    = source->saturateB;
+  destination->gainA        = source->gainA;
+  destination->gainB        = source->gainB;
+  destination->rdnoiseA     = source->rdnoiseA;
+  destination->rdnoiseB     = source->rdnoiseB;
+  destination->exptime      = source->exptime;
+  destination->crpix1       = source->crpix1;
+  destination->crpix2       = source->crpix2;
+  destination->nfound       = source->nfound;
+  destination->hdunum       = source->hdunum;
+  destination->unit         = source->unit;
+  destination->varunit      = source->varunit;
+  destination->maskunit     = source->maskunit;
+  destination->nullval      = source->nullval;
+  destination->shnullval    = source->shnullval;
+  destination->variancetype = source->variancetype;
+  memcpy(destination->axes,source->axes,7*sizeof(long));
+  memcpy(destination->biassecan,source->biassecan,4*sizeof(int));
+  memcpy(destination->biassecbn,source->biassecbn,4*sizeof(int));
+  memcpy(destination->ampsecan,source->ampsecan,4*sizeof(int));
+  memcpy(destination->ampsecbn,source->ampsecbn,4*sizeof(int));
+  memcpy(destination->trimsecn,source->trimsecn,4*sizeof(int));
+  memcpy(destination->datasecn,source->datasecn,4*sizeof(int));
+  memcpy(destination->datasecan,source->datasecan,4*sizeof(int));
+  memcpy(destination->datasecbn,source->datasecbn,4*sizeof(int));
+  size_t imsize = source->axes[0] * source->axes[1];
+  if(source->image){
+    destination->image = (float *)calloc(imsize,sizeof(float));
+    memcpy(destination->image,source->image,imsize*sizeof(float));
+  }
+  if(source->varim){
+    destination->varim = (float *)calloc(imsize,sizeof(float));
+    memcpy(destination->image,source->image,imsize*sizeof(float));
+  }
+  if(source->mask){
+    destination->mask = (short *)calloc(imsize,sizeof(short));
+    memcpy(destination->mask,source->mask,imsize*sizeof(short));
+  }
+}
+
 void rd_desimage(desimage *image,int mode,int flag_verbose)
 {
         static int status=0;
