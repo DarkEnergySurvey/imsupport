@@ -105,7 +105,6 @@ void copy_desimage(desimage *destination,desimage *source)
     destination->mask = (short *)calloc(imsize,sizeof(short));
     memcpy(destination->mask,source->mask,imsize*sizeof(short));
   }
-  printf("done\n");
 }
 
 void rd_desimage(desimage *image,int mode,int flag_verbose)
@@ -188,8 +187,13 @@ void rd_desimage(desimage *image,int mode,int flag_verbose)
 	    else
 	      done_reading_file = 1;
 	  }
-	  else
+	  else{
+	    if(!strncmp(&currentimage[strlen(currentimage)-3],".fz",3)){
+	      flag_fpack = 1;
+	      compressed_format = 1;
+	    } 
 	    done_reading_file = 1;
+	  }
 	}
 	/* report altered filename if needed */
 	if (strcmp(image->name,currentimage)) {
