@@ -51,6 +51,25 @@ namespace Morph {
   typedef std::vector<Morph::IndexType> BlobType; 
   typedef std::vector<Morph::IndexType> BoxType;
 
+
+
+  ///
+  /// \brief Detect and mask bad pixel values
+  /// \param image Pointer to image data
+  /// \param mask Pointer to mask image
+  /// \param Nx Number of pixels in X
+  /// \param Ny Number of pixels in Y
+  /// \param bad_pixel_mask Mask value to set for bad pixels
+  ///
+  /// This function checks an image for nans and infs and 
+  /// sets the mask flag for detected pixels. The number of
+  /// pixels flagged is returned.
+  ///
+  int MaskBadPixelData(Morph::ImageDataType *image,
+		       Morph::MaskDataType *mask,
+		       Morph::IndexType Nx,Morph::IndexType Ny,
+		       Morph::MaskDataType bad_pixel_mask);
+
   ///
   /// \brief Basic erosion
   /// \param mask Pointer to mask image

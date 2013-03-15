@@ -9,6 +9,22 @@
 namespace Morph {
   
 
+  int MaskBadPixelData(Morph::ImageDataType *image,
+		       Morph::MaskDataType *mask,
+		       Morph::IndexType Nx,Morph::IndexType Ny,
+		       Morph::MaskDataType bad_pixel_mask)
+  {
+    Morph::IndexType nbad_pix = 0;
+    Morph::IndexType npix = Nx*Ny;
+    for(Morph::IndexType pixi = 0;pixi < npix;pixi++)
+      if(image[pixi] != image[pixi]){
+	mask[pixi] |= bad_pixel_mask;
+	nbad_pix++;
+      }
+    return(nbad_pix);
+  }
+
+
   bool BoxesCollide(Morph::BoxType &box1,Morph::BoxType &box2,Morph::BoxType &cbox)
   {
     if(((box1[0] >= box2[0]) && (box1[0] <= box2[1])) ||
@@ -330,7 +346,7 @@ namespace Morph {
 	  Morph::IndexType bx = x;
 	  Morph::IndexType by = y;
 	  std::vector<Morph::IndexType> blob(1,current_pixel);
-	  while(blob_pixel != blob.size()){
+	  while(blob_pixel != static_cast<Morph::IndexType>(blob.size())){
 	    if((by - 1) > 0){
 	      Morph::IndexType index = blob[blob_pixel] - Nx;
 	      if((mask[index]&BlobMask) && !already_processed[index]){
@@ -383,7 +399,7 @@ namespace Morph {
 	      }
 	    }
 	    blob_pixel++;
-	    if(blob_pixel < blob.size()){
+	    if(blob_pixel < static_cast<Morph::IndexType>(blob.size())){
 	      bx = blob[blob_pixel]%Nx;
 	      by = blob[blob_pixel]/Nx;
 	    }
