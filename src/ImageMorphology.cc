@@ -409,6 +409,96 @@ namespace Morph {
       }
     }
   }
+
+  void GetBlobsWithRejection(Morph::MaskDataType *mask,
+			     Morph::IndexType Nx,Morph::IndexType Ny,
+			     Morph::MaskDataType BlobMask,
+			     Morph::MaskDataType RejectMask,
+			     Morph::MaskDataType AcceptMask,
+			     std::vector<Morph::IndexType> &blob_image,
+			     std::vector<std::vector<Morph::IndexType> > &blobs)
+  {
+    Morph::IndexType npix = Nx*Ny;
+    blob_image.resize(npix,0);
+    blobs.resize(0);
+    std::vector<bool> already_processed(npix,false);
+    Morph::IndexType nblob = 0;
+    for(Morph::IndexType p = 0;p < npix;p++){
+      Morph::IndexType y = p/Nx;
+      Morph::IndexType x = p%Nx;
+      if(!already_processed[p]){
+	already_processed[p] = true;
+	if((mask[p]&BlobMask)&&(!(mask[p]&RejectMask))){
+	  blob_image[p] = ++nblob;
+	  Morph::IndexType current_pixel = p;
+	  Morph::IndexType blob_pixel = 0;
+	  Morph::IndexType bx = x;
+	  Morph::IndexType by = y;
+	  std::vector<Morph::IndexType> blob(1,current_pixel);
+	  while(blob_pixel != static_cast<Morph::IndexType>(blob.size())){
+	    if((by - 1) > 0){
+	      Morph::IndexType index = blob[blob_pixel] - Nx;
+	      if((mask[index]&BlobMask) && !(mask[index]&RejectMask) && !already_processed[index]){
+		blob.push_back(index);
+		blob_image[index] = nblob;
+		already_processed[index] = true;
+	      }
+	      if((bx - 1) > 0){
+		if((mask[index-1]&BlobMask) && !(mask[index-1]&RejectMask) && !already_processed[index-1]){
+		  blob.push_back(index-1);
+		  blob_image[index-1] = nblob;
+		  already_processed[index-1] = true;
+		}
+	      }
+	      if((bx + 1) < Nx){
+		if((mask[index+1]&BlobMask) && !(mask[index+1]&RejectMask) && !already_processed[index+1]){
+		  blob.push_back(index+1);
+		  blob_image[index+1] = nblob;
+		  already_processed[index+1] = true;
+		}
+	      }
+	    }
+	    if((bx+1) < Nx){
+	      if((mask[blob[blob_pixel]+1]&BlobMask) && !(mask[blob[blob_pixel]+1]&RejectMask) && !already_processed[blob[blob_pixel]+1]){
+		blob.push_back(blob[blob_pixel]+1);
+		blob_image[blob[blob_pixel]+1] = nblob;
+		already_processed[blob[blob_pixel]+1] = true;
+	      }
+	    }
+	    if((by+1) < Ny){
+	      Morph::IndexType index = blob[blob_pixel]+Nx;
+	      if(mask[index]&BlobMask && !(mask[index]&RejectMask) && !already_processed[index]){
+		blob.push_back(index);
+		blob_image[index] = nblob;
+		already_processed[index] = true;
+	      }	      
+	      if((bx - 1) >= 0){
+		if(mask[index-1]&BlobMask && !(mask[index-1]&RejectMask) && !already_processed[index-1]){
+		  blob.push_back(index-1);
+		  blob_image[index-1] = nblob;
+		  already_processed[index-1] = true;
+		}
+	      }
+	      if((bx + 1) < Nx){
+		if(mask[index+1]&BlobMask && !(mask[index+1]&RejectMask) && !already_processed[index+1]){
+		  blob.push_back(index+1);
+		  blob_image[index+1] = nblob;
+		  already_processed[index+1] = true;
+		}		
+	      }
+	    }
+	    blob_pixel++;
+	    if(blob_pixel < static_cast<Morph::IndexType>(blob.size())){
+	      bx = blob[blob_pixel]%Nx;
+	      by = blob[blob_pixel]/Nx;
+	    }
+	  }
+	  blobs.push_back(blob);
+	}
+      }
+    }
+  }
+
   // RejectionMask typically = BADPIX_SATURATE | BADPIX_CRAY | BADPIX_BPM | BADPIX_STAR | BADPIX_TRAIL
   // AcceptMask = BADPIX_INTERP
   // tol = 1e-3
