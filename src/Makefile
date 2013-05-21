@@ -15,7 +15,7 @@ ifndef FITSIO_BASE
 endif
 
 
-OBJECTS=imarithsubs.o archivesubs.o catsubs.o  db_utils.o eventsubs.o imreadsubs.o subs_fits.o subs_memory.o subs_inoutput.o wcssubs.o readstdstable.o ImageMorphology.o LegacyInterface.o ComLine.o primitive_utilities.o System.o MorphologyCX.o argutils.o
+OBJECTS=imarithsubs.o archivesubs.o catsubs.o  db_utils.o eventsubs.o imreadsubs.o lut_utils.o subs_fits.o subs_memory.o subs_inoutput.o wcssubs.o readstdstable.o ImageMorphology.o LegacyInterface.o ComLine.o primitive_utilities.o System.o MorphologyCX.o argutils.o
 
 STANDALONEOBJECTS=imarithsubs.o archivesubs.o catsubs.o eventsubs.o imreadsubs.o subs_fits.o subs_memory.o subs_inoutput.o wcssubs.o readstdstable.o ImageMorphology.o LegacyInterface.o ComLine.o primitive_utilities.o System.o MorphologyCX.o argutils.o
 
