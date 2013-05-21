@@ -2,7 +2,7 @@
 /* Utilities for reading and utilizing look up tables (LUTs) */
 //#include "imageproc.h"
 #include "imsupport.h"
-void  read_lut(lutfile,ccdnum,lutx,luta,lutb)
+void  read_nonlin_lut(lutfile,ccdnum,lutx,luta,lutb)
      char lutfile[];
      int  ccdnum ;
      float *lutx;
