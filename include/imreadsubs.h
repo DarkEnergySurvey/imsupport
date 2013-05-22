@@ -11,7 +11,8 @@ typedef struct {
   float    saturateA,saturateB,
     gainA,gainB,
     rdnoiseA,rdnoiseB,
-    exptime,crpix1,crpix2;
+    exptime,crpix1,crpix2,
+    crval1,crval2,cd[4];
   int      nfound,hdunum,unit,varunit,maskunit;
   int      biassecan[4],biassecbn[4],
     ampsecan[4], ampsecbn[4],

@@ -17,7 +17,7 @@ endif
 
 OBJECTS=imarithsubs.o archivesubs.o catsubs.o  db_utils.o eventsubs.o imreadsubs.o lut_utils.o subs_fits.o subs_memory.o subs_inoutput.o wcssubs.o readstdstable.o ImageMorphology.o LegacyInterface.o ComLine.o primitive_utilities.o System.o MorphologyCX.o argutils.o
 
-STANDALONEOBJECTS=imarithsubs.o archivesubs.o catsubs.o eventsubs.o imreadsubs.o subs_fits.o subs_memory.o subs_inoutput.o wcssubs.o readstdstable.o ImageMorphology.o LegacyInterface.o ComLine.o primitive_utilities.o System.o MorphologyCX.o argutils.o
+STANDALONEOBJECTS=imarithsubs.o archivesubs.o catsubs.o eventsubs.o imreadsubs.o subs_fits.o subs_memory.o subs_inoutput.o wcssubs.o readstdstable.o ImageMorphology.o LegacyInterface.o ComLine.o primitive_utilities.o System.o MorphologyCX.o argutils.o Profiler.o
 
 CFLAGS +=  -I../include -I$(FITSIO_BASE)/include/ -I$(FITSIO_BASE)/include/wcs/ -I$(FITSIO_BASE)/include/psfex/ -I$(FITSIO_BASE)/include/fits/
 
@@ -47,11 +47,6 @@ objects: $(OBJECTS)
 # We build this with "-O0" to "fix" it:                                                                             
 imreadsubs.o: imreadsubs.c
 	$(CC) $(CFLAGS) -O0 -c $^ -o $@  -I../include -I$(FITSIO_BASE)/include/
-
-#ImageMorphology.o: ImageMorphology.cc
-#	$(CPPC) $(CPPFLAGS) -I. -I../ -c ImageMorphology.cc -o $@
-#LegacyInterface.o: LegacyInterface.cc
-#	$(CPPC) $(CPPFLAGS) -I. -I../ -c LegacyInterface.cc -o $@
 
 clean: tidy
 	rm -f ${LIBIMSUPPORT}

@@ -75,6 +75,12 @@ void copy_desimage(desimage *destination,desimage *source)
   destination->exptime      = source->exptime;
   destination->crpix1       = source->crpix1;
   destination->crpix2       = source->crpix2;
+  destination->crval1       = source->crval1;
+  destination->crval2       = source->crval2;
+  destination->cd[0]        = source->cd[0];
+  destination->cd[1]        = source->cd[1];
+  destination->cd[2]        = source->cd[2];
+  destination->cd[3]        = source->cd[3];
   destination->nfound       = source->nfound;
   destination->hdunum       = source->hdunum;
   destination->unit         = source->unit;
@@ -450,6 +456,52 @@ void rd_desimage(desimage *image,int mode,int flag_verbose)
 	        reportevt(flag_verbose,STATUS,3,event);
 	      }
 
+	      /* grab CRVAL1 and CRVAL2 if they are present */
+	      if (fits_read_key_flt(image->fptr,"CRVAL1",&(image->crval1),
+	        comment,&status)==KEY_NO_EXIST) {
+	        status=0;
+	        image->crval1=0.0;
+	        sprintf(event,"CRVAL1 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      if (fits_read_key_flt(image->fptr,"CRVAL2",&(image->crval2),
+	        comment,&status)==KEY_NO_EXIST) {
+	        status=0;
+	        image->crval2=0.0;
+	        sprintf(event,"CRVAL2 missing: %s",currentimage);
+	        reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      
+	      /* grab CD11,CD12,CD21,CD22 */
+	      if (fits_read_key_flt(image->fptr,"CD1_1",&(image->cd[0]),
+				    comment,&status)==KEY_NO_EXIST) {
+		status=0;
+		image->cd[0]=0.0;
+		sprintf(event,"CD1_1 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      if (fits_read_key_flt(image->fptr,"CD1_2",&(image->cd[1]),
+				    comment,&status)==KEY_NO_EXIST) {
+		status=0;
+		image->cd[1]=0.0;
+		sprintf(event,"CD1_2 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      if (fits_read_key_flt(image->fptr,"CD2_1",&(image->cd[2]),
+				    comment,&status)==KEY_NO_EXIST) {
+		status=0;
+		image->cd[2]=0.0;
+		sprintf(event,"CD2_1 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      if (fits_read_key_flt(image->fptr,"CD2_2",&(image->cd[3]),
+				    comment,&status)==KEY_NO_EXIST) {
+		status=0;
+		image->cd[3]=0.0;
+		sprintf(event,"CD2_2 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+
               /*obtain exposure time if need to apply dar current subtraction */
               if (fits_read_key_flt(image->fptr,"EXPTIME",&(image->exptime),comment,
 				    &status)==KEY_NO_EXIST) {
@@ -504,6 +556,52 @@ void rd_desimage(desimage *image,int mode,int flag_verbose)
 	        image->crpix2=0.0;
 	        sprintf(event,"CRPIX2 missing: %s",currentimage);
 	        reportevt(flag_verbose,STATUS,3,event);
+	      }
+
+	      /* grab CRVAL1 and CRVAL2 if they are present */
+	      if (fits_read_key_flt(image->fptr,"CRVAL1",&(image->crval1),
+	        comment,&status)==KEY_NO_EXIST) {
+	        status=0;
+	        image->crval1=0.0;
+	        sprintf(event,"CRVAL1 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      if (fits_read_key_flt(image->fptr,"CRVAL2",&(image->crval2),
+	        comment,&status)==KEY_NO_EXIST) {
+	        status=0;
+	        image->crval2=0.0;
+	        sprintf(event,"CRVAL2 missing: %s",currentimage);
+	        reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      
+	      /* grab CD11,CD12,CD21,CD22 */
+	      if (fits_read_key_flt(image->fptr,"CD1_1",&(image->cd[0]),
+				    comment,&status)==KEY_NO_EXIST) {
+		status=0;
+		image->cd[0]=0.0;
+		sprintf(event,"CD1_1 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      if (fits_read_key_flt(image->fptr,"CD1_2",&(image->cd[1]),
+				    comment,&status)==KEY_NO_EXIST) {
+		status=0;
+		image->cd[1]=0.0;
+		sprintf(event,"CD1_2 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      if (fits_read_key_flt(image->fptr,"CD2_1",&(image->cd[2]),
+				    comment,&status)==KEY_NO_EXIST) {
+		status=0;
+		image->cd[2]=0.0;
+		sprintf(event,"CD2_1 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      if (fits_read_key_flt(image->fptr,"CD2_2",&(image->cd[3]),
+				    comment,&status)==KEY_NO_EXIST) {
+		status=0;
+		image->cd[3]=0.0;
+		sprintf(event,"CD2_2 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
 	      }
 
               /*obtain exposure time if need to apply dar current subtraction */
@@ -989,6 +1087,53 @@ void rd_dessubimage(desimage *image,long *lx,long *ux,int mode,int flag_verbose)
 		}
 		image->crpix2 = image->crpix2 - lx[1] + 1;
 	      }
+
+	      /* grab CRVAL1 and CRVAL2 if they are present */
+	      if (fits_read_key_flt(image->fptr,"CRVAL1",&(image->crval1),
+	        comment,&status)==KEY_NO_EXIST) {
+	        status=0;
+	        image->crval1=0.0;
+	        sprintf(event,"CRVAL1 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      if (fits_read_key_flt(image->fptr,"CRVAL2",&(image->crval2),
+	        comment,&status)==KEY_NO_EXIST) {
+	        status=0;
+	        image->crval2=0.0;
+	        sprintf(event,"CRVAL2 missing: %s",currentimage);
+	        reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      
+	      /* grab CD11,CD12,CD21,CD22 */
+	      if (fits_read_key_flt(image->fptr,"CD1_1",&(image->cd[0]),
+				    comment,&status)==KEY_NO_EXIST) {
+		status=0;
+		image->cd[0]=0.0;
+		sprintf(event,"CD1_1 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      if (fits_read_key_flt(image->fptr,"CD1_2",&(image->cd[1]),
+				    comment,&status)==KEY_NO_EXIST) {
+		status=0;
+		image->cd[1]=0.0;
+		sprintf(event,"CD1_2 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      if (fits_read_key_flt(image->fptr,"CD2_1",&(image->cd[2]),
+				    comment,&status)==KEY_NO_EXIST) {
+		status=0;
+		image->cd[2]=0.0;
+		sprintf(event,"CD2_1 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+	      if (fits_read_key_flt(image->fptr,"CD2_2",&(image->cd[3]),
+				    comment,&status)==KEY_NO_EXIST) {
+		status=0;
+		image->cd[3]=0.0;
+		sprintf(event,"CD2_2 missing: %s",currentimage);
+		reportevt(flag_verbose,STATUS,3,event);
+	      }
+
               /*obtain exposure time if need to apply dar current subtraction */
               if (fits_read_key_flt(image->fptr,"EXPTIME",&(image->exptime),comment,
 				    &status)==KEY_NO_EXIST) {
