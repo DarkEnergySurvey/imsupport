@@ -103,23 +103,26 @@ float lut_srch(value,lut,flag_interp)
    float frac,retval;
    double dl;
 
+/* RAG to make this more generic needs to know the size of the array so 
+   that the bounds are not fixed as the are below here */
+
    if ((value < 0.0)||(value >= 65536.0)){
       retval=value;
+/*    printf(" Outside lut range: value=%f  retval=%f  \n",value,retval); */
    }else{
       index=(int)value;
       frac=value-(float)index;
       if (flag_interp){
          dl=lut[index+1]-lut[index];
          retval=(float) (lut[index]+(dl*(double)frac));
-/*         printf(" INTERP value: %.5f index=%d frac=%.5f  lut1=%f lut2=%f  retval=%f  \n",value,index,frac,lut[index],lut[index+1],retval); */
       }else{
 	if (frac >= 0.5){
            retval=(float)lut[index+1];
         }else{
            retval=(float)lut[index];
         }
-/*        printf(" NEAREST value: %.5f index=%d frac=%.5f  lut1=%f lut2=%f  retval=%f  \n",value,index,frac,lut[index],lut[index+1],retval); */
       }
+/*    printf(" NEAREST value: %.5f index=%d frac=%.5f  lut1=%f lut2=%f  retval=%f  \n",value,index,frac,lut[index],lut[index+1],retval); */
    }
    return(retval);    
 }
