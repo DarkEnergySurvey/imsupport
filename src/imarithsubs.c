@@ -497,6 +497,176 @@ void  retrievescale(desimage *image,int *scaleregionn,float *scalesort,
   }
 }
 
+int float_cmpfunc(const void * a, const void * b) /* used in qsort */
+{
+   return (*(float*)a < *(float*)b) ? -1 : 1; 
+} 
+
+void retrievescale_fast(desimage *image, int *scaleregionn, float *scalesort,
+			int flag_verbose, float *scalefactor, float *mode, float *sigma)
+{
+  int i, x, y, yd, loc, xdim, npixels, width, j, jmax, jplus, jminus, num;
+  float *histx, *histy, ymax, fraction;
+  char event[10000];
+
+  /* copy good image values into sorting vector */
+  i = 0;
+  xdim = image->axes[0];
+  npixels = image->npixels;
+  
+  for (y = scaleregionn[2]-1; y < scaleregionn[3]; y++)
+  {
+    yd = y * xdim;
+    
+    for (x = scaleregionn[0]-1; x < scaleregionn[1]; x++)
+    {
+      loc = x + yd;
+      
+      if (loc >= 0 && loc < npixels)
+      {
+        if (!(image->mask[loc])) /* of pixel not masked */
+        { 
+            scalesort[i++] = image->image[loc];
+        } 
+      }
+    }
+  }
+
+  if (i<100) 
+  {
+    sprintf(event,"image=%s & UseableScaleRegion = [%d:%d,%d:%d]",image->name,
+	    scaleregionn[0],scaleregionn[1],scaleregionn[2],scaleregionn[3]);
+    reportevt(flag_verbose,QA,3,event);
+    
+    *scalefactor = 0.0; /* mark image as unuseable */
+    
+    return;
+  }
+  
+  /* sort list */
+  //shell(i, scalesort-1);
+  qsort(scalesort, i, sizeof(float), float_cmpfunc);
+  
+  /* grab the median */
+  if (i%2) 
+    *scalefactor = scalesort[i/2];
+  else 
+    *scalefactor = 0.5*(scalesort[i/2] + scalesort[i/2-1]);
+  
+  /* examine histogram */
+  width = 1000;
+  num = i/width/2;
+  
+  histx = (float *)calloc(num, sizeof(float));
+  if (histx == NULL) 
+  {
+    sprintf(event,"Calloc of histx failed");
+    reportevt(flag_verbose,STATUS,5,event);
+    exit(0);
+  }
+  
+  histy = (float *)calloc(num, sizeof(float));
+  if (histy == NULL) 
+  {
+    sprintf(event,"Calloc of histy failed");
+    reportevt(flag_verbose,STATUS,5,event);
+    exit(0);
+  }
+  
+  ymax = 0.0f;
+  jmax = jplus = jminus = 0;
+  
+  for (j = num; j > 0; j--) 
+  {
+    loc = width + (j-1) * 2 * width;
+    histx[j-1] = (scalesort[loc+width] + scalesort[loc-width]) * 0.5f;
+    histy[j-1] = 2.0f * width / (scalesort[loc+width] - scalesort[loc-width]);
+    
+    if (histy[j-1] > ymax) 
+    {
+      ymax = histy[j-1];
+      jmax = j-1;
+    }
+  }
+  
+  for (j = jmax; j < num; j++) 
+  {
+    if (histy[j] < 0.5f*ymax) 
+    {
+        jplus = j;
+        break;
+    }
+  }
+  
+  for (j = jmax; j >= 0; j--) 
+  {
+    if (histy[j] < 0.5f*ymax) 
+    {
+      jminus = j;
+      break;
+    }
+  }
+
+  *mode = histx[jmax];
+  *sigma = histx[jplus] - histx[jminus];
+  *sigma /= 2.354;  /* change to sigma assuming gaussian distribution */
+
+  if (flag_verbose)
+  {
+    fraction= (float)i/(float)((scaleregionn[1]-scaleregionn[0]+1)*(scaleregionn[3]-scaleregionn[2]+1));
+    if (strncmp(image->name,"!",1)) 
+      sprintf(event,"Image=  %s & Region = [%d:%d,%d:%d] & FractionalNoOfPixels = %.4f &  Scale=%.1f & Mode=%.1f & Sigma=%.2f",
+	      image->name,scaleregionn[0],scaleregionn[1],scaleregionn[2],scaleregionn[3],fraction,*scalefactor,*mode,*sigma);
+    else
+      sprintf(event,"Image= %s & Region = [%d:%d,%d:%d] & FractionaNoOfPixels = %.5f  & Scale=%.1f & Mode=%.1f & Sigma=%.2f",
+	      image->name+1, scaleregionn[0],scaleregionn[1],scaleregionn[2],scaleregionn[3],fraction,*scalefactor,*mode,*sigma);
+
+    reportevt(flag_verbose,QA,1,event);
+  }
+    
+  free(histx);
+  free(histy);
+
+  return;
+}
+
+
+void  retrievescale_timetest(desimage *image,int *scaleregionn,float *scalesort,
+		    int flag_verbose,float *scalefactor,
+		    float *mode,float *sigma)
+{
+    struct timeval t0, t1, t2;
+    float d_slow, d_fast;
+
+    float old_scalefactor,  old_mode, old_sigma;
+    float fast_scalefactor,  fast_mode, fast_sigma;
+
+    gettimeofday(&t0, NULL);
+
+    retrievescale(image, scaleregionn, scalesort, flag_verbose, &old_scalefactor, &old_mode, &old_sigma);
+
+    gettimeofday(&t1, NULL);
+
+    retrievescale_fast(image, scaleregionn, scalesort, flag_verbose, &fast_scalefactor, &fast_mode, &fast_sigma);
+
+    gettimeofday(&t2, NULL);
+
+    d_slow = (t1.tv_sec - t0.tv_sec) +  ((t1.tv_usec - t0.tv_usec)/1000000.0f);
+    d_fast = (t2.tv_sec - t1.tv_sec) +  ((t2.tv_usec - t1.tv_usec)/1000000.0f);
+
+    printf("_old: %f, _fast: %f, improvement: %f (old: %f %f %f; new: %f %f %f)\n", 
+	d_slow, d_fast, d_slow/d_fast, 
+	old_scalefactor,  old_mode, old_sigma,
+	fast_scalefactor,  fast_mode, fast_sigma );
+
+
+    *scalefactor = old_scalefactor;
+    *mode = old_mode;
+    *sigma = old_sigma;
+    
+    return;
+}
+
 
 /* ************************************************************** */
 /* ********** compare two images and return statistics ********** */
@@ -1359,3 +1529,62 @@ int column_in_section(int col,int *sec)
   }
   return((col >= lx) && (col <= ux)); 
 }
+
+/*
+ *  This Quickselect routine is based on the algorithm described in
+ *  "Numerical recipes in C", Second Edition,
+ *  Cambridge University Press, 1992, Section 8.5, ISBN 0-521-43108-5
+ *  This code by Nicolas Devillard - 1998. Public domain.
+ */
+
+#define ELEM_SWAP(a,b) { register float t=(a);(a)=(b);(b)=t; }
+
+float quick_select(float *arr, int n)
+{
+    int low=0, high=n-1 ;
+    int median = (low + high) / 2;
+    int middle, ll, hh;
+
+    //low = 0 ; high = n-1 ; median = (low + high) / 2;
+
+    while (1)
+    {
+        if (high <= low) /* One element only */
+            return arr[median];
+
+        if (high == low + 1) {  /* Two elements only */
+            if (arr[low] > arr[high])
+                ELEM_SWAP(arr[low], arr[high]);
+            return arr[median];
+        }
+
+        /* Find median of low, middle and high items; swap into position low */
+        middle = (low + high) / 2;
+        if (arr[middle] > arr[high])    ELEM_SWAP(arr[middle], arr[high]) ;
+        if (arr[low] > arr[high])       ELEM_SWAP(arr[low], arr[high]) ;
+        if (arr[middle] > arr[low])     ELEM_SWAP(arr[middle], arr[low]) ;
+
+        /* Swap low item (now in position middle) into position (low+1) */
+        ELEM_SWAP(arr[middle], arr[low+1]);
+
+        /* Nibble from each end towards middle, swapping items when stuck */
+        ll = low + 1;
+        hh = high;
+
+        while (1)
+        {
+            do ll++; while (arr[low] > arr[ll]) ;
+            do hh--; while (arr[hh]  > arr[low]) ;
+            if (hh < ll) break;
+            ELEM_SWAP(arr[ll], arr[hh]) ;
+        }
+
+        /* Swap middle item (in position low) back into correct position */
+        ELEM_SWAP(arr[low], arr[hh]) ;
+
+        /* Re-set active partition */
+        if (hh <= median) low = ll;
+        if (hh >= median) high = hh - 1;
+    }
+}
+
