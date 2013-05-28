@@ -10,6 +10,13 @@
 #include <math.h>
 #include <stdlib.h>
 #include "imsupport.h"
+#include "inlined_qsort.h"
+
+void float_qsort(float *arr, unsigned int n)
+{
+   #define float_lt(a,b) ((*a)<(*b))
+   QSORT(float, arr, n, float_lt);
+}
 
 
 /* ************************************************************** */
@@ -497,11 +504,6 @@ void  retrievescale(desimage *image,int *scaleregionn,float *scalesort,
   }
 }
 
-int float_cmpfunc(const void * a, const void * b) /* used in qsort */
-{
-   return (*(float*)a < *(float*)b) ? -1 : 1; 
-} 
-
 void retrievescale_fast(desimage *image, int *scaleregionn, float *scalesort,
 			int flag_verbose, float *scalefactor, float *mode, float *sigma)
 {
@@ -545,7 +547,8 @@ void retrievescale_fast(desimage *image, int *scaleregionn, float *scalesort,
   
   /* sort list */
   //shell(i, scalesort-1);
-  qsort(scalesort, i, sizeof(float), float_cmpfunc);
+  //qsort(scalesort, i, sizeof(float), float_cmpfunc);
+  float_qsort(scalesort, i);
   
   /* grab the median */
   if (i%2) 
@@ -628,43 +631,6 @@ void retrievescale_fast(desimage *image, int *scaleregionn, float *scalesort,
   free(histy);
 
   return;
-}
-
-
-void  retrievescale_timetest(desimage *image,int *scaleregionn,float *scalesort,
-		    int flag_verbose,float *scalefactor,
-		    float *mode,float *sigma)
-{
-    struct timeval t0, t1, t2;
-    float d_slow, d_fast;
-
-    float old_scalefactor,  old_mode, old_sigma;
-    float fast_scalefactor,  fast_mode, fast_sigma;
-
-    gettimeofday(&t0, NULL);
-
-    retrievescale(image, scaleregionn, scalesort, flag_verbose, &old_scalefactor, &old_mode, &old_sigma);
-
-    gettimeofday(&t1, NULL);
-
-    retrievescale_fast(image, scaleregionn, scalesort, flag_verbose, &fast_scalefactor, &fast_mode, &fast_sigma);
-
-    gettimeofday(&t2, NULL);
-
-    d_slow = (t1.tv_sec - t0.tv_sec) +  ((t1.tv_usec - t0.tv_usec)/1000000.0f);
-    d_fast = (t2.tv_sec - t1.tv_sec) +  ((t2.tv_usec - t1.tv_usec)/1000000.0f);
-
-    printf("_old: %f, _fast: %f, improvement: %f (old: %f %f %f; new: %f %f %f)\n", 
-	d_slow, d_fast, d_slow/d_fast, 
-	old_scalefactor,  old_mode, old_sigma,
-	fast_scalefactor,  fast_mode, fast_sigma );
-
-
-    *scalefactor = old_scalefactor;
-    *mode = old_mode;
-    *sigma = old_sigma;
-    
-    return;
 }
 
 

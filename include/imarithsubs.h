@@ -23,6 +23,7 @@ extern "C" {
   void orient_section(int *section);
   int column_in_section(int col,int *sec);
 
+  void float_qsort(float *arr, unsigned int n);
   float quick_select(float *arr, int n); 
 
 #ifdef __cplusplus 
