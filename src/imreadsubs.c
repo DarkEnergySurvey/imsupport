@@ -47,6 +47,72 @@ void destroy_desimage(desimage *image)
   init_desimage(image);
 }
 
+// (Safely) destroys any data in destination.
+void copy_desimage(desimage *destination,desimage *source)
+{
+  destroy_desimage(destination);
+  destination->fptr = source->fptr;
+  strncpy(destination->name,source->name,1000);
+  strncpy(destination->biasseca,source->biasseca,100);
+  strncpy(destination->ampseca,source->ampseca,100);
+  strncpy(destination->dataseca,source->dataseca,100);
+  strncpy(destination->biassecb,source->biassecb,100);
+  strncpy(destination->ampsecb,source->ampsecb,100);
+  strncpy(destination->datasecb,source->datasecb,100);
+  strncpy(destination->trimsec,source->trimsec,100);
+  strncpy(destination->datasec,source->datasec,100);
+  destination->bscale       = source->bscale;
+  destination->bzero        = source->bzero;
+  destination->bitpix       = source->bitpix;
+  destination->npixels      = source->npixels;
+  destination->fpixel       = source->fpixel;
+  destination->saturateA    = source->saturateA;
+  destination->saturateB    = source->saturateB;
+  destination->gainA        = source->gainA;
+  destination->gainB        = source->gainB;
+  destination->rdnoiseA     = source->rdnoiseA;
+  destination->rdnoiseB     = source->rdnoiseB;
+  destination->exptime      = source->exptime;
+/*   destination->crpix1       = source->crpix1; */
+/*   destination->crpix2       = source->crpix2; */
+/*   destination->crval1       = source->crval1; */
+/*   destination->crval2       = source->crval2; */
+/*   destination->cd[0]        = source->cd[0]; */
+/*   destination->cd[1]        = source->cd[1]; */
+/*   destination->cd[2]        = source->cd[2]; */
+/*   destination->cd[3]        = source->cd[3]; */
+  destination->nfound       = source->nfound;
+  destination->hdunum       = source->hdunum;
+  destination->unit         = source->unit;
+  destination->varunit      = source->varunit;
+  destination->maskunit     = source->maskunit;
+  destination->nullval      = source->nullval;
+  destination->shnullval    = source->shnullval;
+  destination->variancetype = source->variancetype;
+  memcpy(destination->axes,source->axes,7*sizeof(long));
+  memcpy(destination->biassecan,source->biassecan,4*sizeof(int));
+  memcpy(destination->biassecbn,source->biassecbn,4*sizeof(int));
+  memcpy(destination->ampsecan,source->ampsecan,4*sizeof(int));
+  memcpy(destination->ampsecbn,source->ampsecbn,4*sizeof(int));
+  memcpy(destination->trimsecn,source->trimsecn,4*sizeof(int));
+  memcpy(destination->datasecn,source->datasecn,4*sizeof(int));
+  memcpy(destination->datasecan,source->datasecan,4*sizeof(int));
+  memcpy(destination->datasecbn,source->datasecbn,4*sizeof(int));
+  size_t imsize = source->axes[0] * source->axes[1];
+  if(source->image){
+    destination->image = (float *)calloc(imsize,sizeof(float));
+    memcpy(destination->image,source->image,imsize*sizeof(float));
+  }
+  if(source->varim){
+    destination->varim = (float *)calloc(imsize,sizeof(float));
+    memcpy(destination->varim,source->varim,imsize*sizeof(float));
+  }
+  if(source->mask){
+    destination->mask = (short *)calloc(imsize,sizeof(short));
+    memcpy(destination->mask,source->mask,imsize*sizeof(short));
+  }
+}
+
 void rd_desimage(desimage *image,int mode,int flag_verbose)
 {
         static int status=0;
@@ -127,8 +193,13 @@ void rd_desimage(desimage *image,int mode,int flag_verbose)
 	    else
 	      done_reading_file = 1;
 	  }
-	  else
+	  else{
+	    if(!strncmp(&currentimage[strlen(currentimage)-3],".fz",3)){
+	      flag_fpack = 1;
+	      compressed_format = 1;
+	    } 
 	    done_reading_file = 1;
+	  }
 	}
 	/* report altered filename if needed */
 	if (strcmp(image->name,currentimage)) {
@@ -370,20 +441,66 @@ void rd_desimage(desimage *image,int mode,int flag_verbose)
 	      }
 
 	      /* grab CRPIX1 and CRPIX2 if they are present */
-	      if (fits_read_key_flt(image->fptr,"CRPIX1",&(image->crpix1),
-	        comment,&status)==KEY_NO_EXIST) {
-	        status=0;
-	        image->crpix1=0.0;
-	        sprintf(event,"CRPIX1 missing: %s",currentimage);
-		reportevt(flag_verbose,STATUS,3,event);
-	      }
-	      if (fits_read_key_flt(image->fptr,"CRPIX2",&(image->crpix2),
-	        comment,&status)==KEY_NO_EXIST) {
-	        status=0;
-	        image->crpix2=0.0;
-	        sprintf(event,"CRPIX2 missing: %s",currentimage);
-	        reportevt(flag_verbose,STATUS,3,event);
-	      }
+/* 	      if (fits_read_key_flt(image->fptr,"CRPIX1",&(image->crpix1), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crpix1=0.0; */
+/* 	        sprintf(event,"CRPIX1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CRPIX2",&(image->crpix2), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crpix2=0.0; */
+/* 	        sprintf(event,"CRPIX2 missing: %s",currentimage); */
+/* 	        reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+
+/* 	      /\* grab CRVAL1 and CRVAL2 if they are present *\/ */
+/* 	      if (fits_read_key_flt(image->fptr,"CRVAL1",&(image->crval1), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crval1=0.0; */
+/* 	        sprintf(event,"CRVAL1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CRVAL2",&(image->crval2), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crval2=0.0; */
+/* 	        sprintf(event,"CRVAL2 missing: %s",currentimage); */
+/* 	        reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+	      
+/* 	      /\* grab CD11,CD12,CD21,CD22 *\/ */
+/* 	      if (fits_read_key_flt(image->fptr,"CD1_1",&(image->cd[0]), */
+/* 				    comment,&status)==KEY_NO_EXIST) { */
+/* 		status=0; */
+/* 		image->cd[0]=0.0; */
+/* 		sprintf(event,"CD1_1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CD1_2",&(image->cd[1]), */
+/* 				    comment,&status)==KEY_NO_EXIST) { */
+/* 		status=0; */
+/* 		image->cd[1]=0.0; */
+/* 		sprintf(event,"CD1_2 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CD2_1",&(image->cd[2]), */
+/* 				    comment,&status)==KEY_NO_EXIST) { */
+/* 		status=0; */
+/* 		image->cd[2]=0.0; */
+/* 		sprintf(event,"CD2_1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CD2_2",&(image->cd[3]), */
+/* 				    comment,&status)==KEY_NO_EXIST) { */
+/* 		status=0; */
+/* 		image->cd[3]=0.0; */
+/* 		sprintf(event,"CD2_2 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
 
               /*obtain exposure time if need to apply dar current subtraction */
               if (fits_read_key_flt(image->fptr,"EXPTIME",&(image->exptime),comment,
@@ -425,21 +542,67 @@ void rd_desimage(desimage *image,int mode,int flag_verbose)
 	        sprintf(event,"CCD: Saturate= %.1f",saturate);
 	        reportevt(flag_verbose,STATUS,1,event);
 	      }
-	      /* grab CRPIX1 and CRPIX2 if they are present */
-	      if (fits_read_key_flt(image->fptr,"CRPIX1",&(image->crpix1),
-	        comment,&status)==KEY_NO_EXIST) {
-	        status=0;
-	        image->crpix1=0.0;
-	        sprintf(event,"CRPIX1 missing: %s",currentimage);
-		reportevt(flag_verbose,STATUS,3,event);
-	      }
-	      if (fits_read_key_flt(image->fptr,"CRPIX2",&(image->crpix2),
-	        comment,&status)==KEY_NO_EXIST) {
-	        status=0;
-	        image->crpix2=0.0;
-	        sprintf(event,"CRPIX2 missing: %s",currentimage);
-	        reportevt(flag_verbose,STATUS,3,event);
-	      }
+/* 	      /\* grab CRPIX1 and CRPIX2 if they are present *\/ */
+/* 	      if (fits_read_key_flt(image->fptr,"CRPIX1",&(image->crpix1), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crpix1=0.0; */
+/* 	        sprintf(event,"CRPIX1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CRPIX2",&(image->crpix2), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crpix2=0.0; */
+/* 	        sprintf(event,"CRPIX2 missing: %s",currentimage); */
+/* 	        reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+
+/* 	      /\* grab CRVAL1 and CRVAL2 if they are present *\/ */
+/* 	      if (fits_read_key_flt(image->fptr,"CRVAL1",&(image->crval1), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crval1=0.0; */
+/* 	        sprintf(event,"CRVAL1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CRVAL2",&(image->crval2), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crval2=0.0; */
+/* 	        sprintf(event,"CRVAL2 missing: %s",currentimage); */
+/* 	        reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+	      
+/* 	      /\* grab CD11,CD12,CD21,CD22 *\/ */
+/* 	      if (fits_read_key_flt(image->fptr,"CD1_1",&(image->cd[0]), */
+/* 				    comment,&status)==KEY_NO_EXIST) { */
+/* 		status=0; */
+/* 		image->cd[0]=0.0; */
+/* 		sprintf(event,"CD1_1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CD1_2",&(image->cd[1]), */
+/* 				    comment,&status)==KEY_NO_EXIST) { */
+/* 		status=0; */
+/* 		image->cd[1]=0.0; */
+/* 		sprintf(event,"CD1_2 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CD2_1",&(image->cd[2]), */
+/* 				    comment,&status)==KEY_NO_EXIST) { */
+/* 		status=0; */
+/* 		image->cd[2]=0.0; */
+/* 		sprintf(event,"CD2_1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CD2_2",&(image->cd[3]), */
+/* 				    comment,&status)==KEY_NO_EXIST) { */
+/* 		status=0; */
+/* 		image->cd[3]=0.0; */
+/* 		sprintf(event,"CD2_2 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
 
               /*obtain exposure time if need to apply dar current subtraction */
               if (fits_read_key_flt(image->fptr,"EXPTIME",&(image->exptime),comment,
@@ -895,35 +1058,82 @@ void rd_dessubimage(desimage *image,long *lx,long *ux,int mode,int flag_verbose)
 	        reportevt(flag_verbose,STATUS,3,event);
 	      }
 
-	      /* grab CRPIX1 and CRPIX2 if they are present */
-	      if (fits_read_key_flt(image->fptr,"CRPIX1",&(image->crpix1),
-	        comment,&status)==KEY_NO_EXIST) {
-	        status=0;
-	        image->crpix1=0.0;
-	        sprintf(event,"CRPIX1 missing: %s",currentimage);
-		reportevt(flag_verbose,STATUS,3,event);
-	      }
-	      else {
-		if(flag_verbose){
-		  sprintf(event,"Reset CRPIX1 from %f to %f",image->crpix1,image->crpix1-lx[0]+1);
-		  reportevt(flag_verbose,STATUS,3,event);
-		}
-		image->crpix1 = image->crpix1 - lx[0] + 1;
-	      }
-	      if (fits_read_key_flt(image->fptr,"CRPIX2",&(image->crpix2),
-	        comment,&status)==KEY_NO_EXIST) {
-	        status=0;
-	        image->crpix2=0.0;
-	        sprintf(event,"CRPIX2 missing: %s",currentimage);
-	        reportevt(flag_verbose,STATUS,3,event);
-	      }
-	      else {
-		if(flag_verbose){
-		  sprintf(event,"Reset CRPIX2 from %f to %f",image->crpix2,image->crpix2 - lx[1]+1);
-		  reportevt(flag_verbose,STATUS,3,event);
-		}
-		image->crpix2 = image->crpix2 - lx[1] + 1;
-	      }
+/* 	      /\* grab CRPIX1 and CRPIX2 if they are present *\/ */
+/* 	      if (fits_read_key_flt(image->fptr,"CRPIX1",&(image->crpix1), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crpix1=0.0; */
+/* 	        sprintf(event,"CRPIX1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      else { */
+/* 		if(flag_verbose){ */
+/* 		  sprintf(event,"Reset CRPIX1 from %f to %f",image->crpix1,image->crpix1-lx[0]+1); */
+/* 		  reportevt(flag_verbose,STATUS,3,event); */
+/* 		} */
+/* 		image->crpix1 = image->crpix1 - lx[0] + 1; */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CRPIX2",&(image->crpix2), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crpix2=0.0; */
+/* 	        sprintf(event,"CRPIX2 missing: %s",currentimage); */
+/* 	        reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      else { */
+/* 		if(flag_verbose){ */
+/* 		  sprintf(event,"Reset CRPIX2 from %f to %f",image->crpix2,image->crpix2 - lx[1]+1); */
+/* 		  reportevt(flag_verbose,STATUS,3,event); */
+/* 		} */
+/* 		image->crpix2 = image->crpix2 - lx[1] + 1; */
+/* 	      } */
+
+/* 	      /\* grab CRVAL1 and CRVAL2 if they are present *\/ */
+/* 	      if (fits_read_key_flt(image->fptr,"CRVAL1",&(image->crval1), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crval1=0.0; */
+/* 	        sprintf(event,"CRVAL1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CRVAL2",&(image->crval2), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crval2=0.0; */
+/* 	        sprintf(event,"CRVAL2 missing: %s",currentimage); */
+/* 	        reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+	      
+/* 	      /\* grab CD11,CD12,CD21,CD22 *\/ */
+/* 	      if (fits_read_key_flt(image->fptr,"CD1_1",&(image->cd[0]), */
+/* 				    comment,&status)==KEY_NO_EXIST) { */
+/* 		status=0; */
+/* 		image->cd[0]=0.0; */
+/* 		sprintf(event,"CD1_1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CD1_2",&(image->cd[1]), */
+/* 				    comment,&status)==KEY_NO_EXIST) { */
+/* 		status=0; */
+/* 		image->cd[1]=0.0; */
+/* 		sprintf(event,"CD1_2 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CD2_1",&(image->cd[2]), */
+/* 				    comment,&status)==KEY_NO_EXIST) { */
+/* 		status=0; */
+/* 		image->cd[2]=0.0; */
+/* 		sprintf(event,"CD2_1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CD2_2",&(image->cd[3]), */
+/* 				    comment,&status)==KEY_NO_EXIST) { */
+/* 		status=0; */
+/* 		image->cd[3]=0.0; */
+/* 		sprintf(event,"CD2_2 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+
               /*obtain exposure time if need to apply dar current subtraction */
               if (fits_read_key_flt(image->fptr,"EXPTIME",&(image->exptime),comment,
 				    &status)==KEY_NO_EXIST) {
@@ -963,35 +1173,35 @@ void rd_dessubimage(desimage *image,long *lx,long *ux,int mode,int flag_verbose)
 	        sprintf(event,"CCD: Saturate= %.1f",saturate);
 	        reportevt(flag_verbose,STATUS,1,event);
 	      }
-	      /* grab CRPIX1 and CRPIX2 if they are present */
-	      if (fits_read_key_flt(image->fptr,"CRPIX1",&(image->crpix1),
-	        comment,&status)==KEY_NO_EXIST) {
-	        status=0;
-	        image->crpix1=0.0;
-	        sprintf(event,"CRPIX1 missing: %s",currentimage);
-		reportevt(flag_verbose,STATUS,3,event);
-	      }
-	      else {
-		if(flag_verbose){
-		  sprintf(event,"Reset CRPIX1 from %f to %f",image->crpix1,image->crpix1-lx[0]+1);
-		  reportevt(flag_verbose,STATUS,3,event);
-		}
-		image->crpix1 = image->crpix1 - lx[0] + 1;
-	      }
-	      if (fits_read_key_flt(image->fptr,"CRPIX2",&(image->crpix2),
-	        comment,&status)==KEY_NO_EXIST) {
-	        status=0;
-	        image->crpix2=0.0;
-	        sprintf(event,"CRPIX2 missing: %s",currentimage);
-	        reportevt(flag_verbose,STATUS,3,event);
-	      }
-	      else {
-		if(flag_verbose){
-		  sprintf(event,"Reset CRPIX2 from %f to %f",image->crpix2,image->crpix2 - lx[1]+1);
-		  reportevt(flag_verbose,STATUS,3,event);
-		}
-		image->crpix2 = image->crpix2 - lx[1] + 1;
-	      }
+/* 	      /\* grab CRPIX1 and CRPIX2 if they are present *\/ */
+/* 	      if (fits_read_key_flt(image->fptr,"CRPIX1",&(image->crpix1), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crpix1=0.0; */
+/* 	        sprintf(event,"CRPIX1 missing: %s",currentimage); */
+/* 		reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      else { */
+/* 		if(flag_verbose){ */
+/* 		  sprintf(event,"Reset CRPIX1 from %f to %f",image->crpix1,image->crpix1-lx[0]+1); */
+/* 		  reportevt(flag_verbose,STATUS,3,event); */
+/* 		} */
+/* 		image->crpix1 = image->crpix1 - lx[0] + 1; */
+/* 	      } */
+/* 	      if (fits_read_key_flt(image->fptr,"CRPIX2",&(image->crpix2), */
+/* 	        comment,&status)==KEY_NO_EXIST) { */
+/* 	        status=0; */
+/* 	        image->crpix2=0.0; */
+/* 	        sprintf(event,"CRPIX2 missing: %s",currentimage); */
+/* 	        reportevt(flag_verbose,STATUS,3,event); */
+/* 	      } */
+/* 	      else { */
+/* 		if(flag_verbose){ */
+/* 		  sprintf(event,"Reset CRPIX2 from %f to %f",image->crpix2,image->crpix2 - lx[1]+1); */
+/* 		  reportevt(flag_verbose,STATUS,3,event); */
+/* 		} */
+/* 		image->crpix2 = image->crpix2 - lx[1] + 1; */
+/* 	      } */
               /*obtain exposure time if need to apply dar current subtraction */
               if (fits_read_key_flt(image->fptr,"EXPTIME",&(image->exptime),comment,
 				    &status)==KEY_NO_EXIST) {

@@ -404,7 +404,7 @@ int mkpath(filename,flag_verbose)
                 tries = 1;
                 while (save_errno && tries < maxtries) { 
 		  tries++;
-		  if (mkdir(partialpath, 0750) < 0) {
+		  if (mkdir(partialpath, 0770) < 0) {
 		    save_errno = errno;
 		    
 		    /* Directory existing error message can be ignored */

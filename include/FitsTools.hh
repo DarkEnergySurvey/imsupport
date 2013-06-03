@@ -14,6 +14,7 @@
 
 // Interface to legacy constructs
 #include "LegacyInterface.hh"
+//#include "Profiler.hh"
 
 // CCFITS
 #include <CCfits>
@@ -114,20 +115,56 @@ namespace FitsTools {
     };
   };
 
+//   inline int
+//   HeaderCardToKeyword(const std::string &card,std::string &keyword,std::string &value,std::string &comment)
+//   {
+//     keyword.erase();
+//     value.erase();
+//     comment.erase();
+//     std::string::size_type x = card.find("=");
+//     if(x == std::string::npos){
+//       if(card.substr(0,7) == "HISTORY")
+// 	value = card.substr(7);
+//       else if (card.substr(0,7) == "COMMENT")
+// 	comment = card.substr(7);
+//       return;
+//     }
+//     keyword = card.substr(0,x);
+//     value = card.substr(x+1);
+//     x = value.rfind("/");
+//     std::istringstream Istr(card);
+//     Istr >> keyword;
+//     std::ostringstream Ostr;
+//     std::string::size_type x = keyword.find("=");
+//     if(x != std::string::npos){
+//       value = keyword.substr(x+1);
+//       keyword = keyword.substr(0,x);
+//     }
+//     else {
+
+//     }
+//   }
   class FitsImage
   {
   private:
     std::ostream               *Out;
     char                       **exclist;
     int                        nexcl;
+    //    Profiler::ProfilerObj      *_profiler;
     std::vector<std::string>   _Headers;
     bool                       _myimage;
+    fitsfile                   *_ofptr;
+    fitsfile                   *_ifptr;
     desimage                   *_des;
   public:
-    FitsImage(): Out(NULL), exclist(NULL), nexcl(0), _myimage(true) {
+    //    FitsImage(): Out(NULL), exclist(NULL), nexcl(0), _profiler(NULL), 
+    //    		 _myimage(true), _ofptr(NULL), _ifptr(NULL) {
+          FitsImage(): Out(NULL), exclist(NULL), nexcl(0), 
+      		 _myimage(true), _ofptr(NULL), _ifptr(NULL) {
       _des = new desimage;
       init_desimage(_des); 
     };
+    //    void SetProfiler(Profiler::ProfilerObj &profiler){ _profiler = &profiler; };
     const std::string &ImageHeader() const { return(_Headers[_des->unit]); };
     std::string &ImageHeader() { return(_Headers[_des->unit]); };
     void AppendImageHeader(const std::string &entry){
@@ -151,6 +188,8 @@ namespace FitsTools {
     void SetOutStream(std::ostream &ostr) { Out = &ostr; };
     void SetExclusions(char **elist,int nel){ exclist=elist; nexcl=nel; };
     int Close(){ int status = 0;return(fits_close_file(_des->fptr,&status)); };
+    int CloseInfile(){ int status = 0;return(fits_close_file(_ifptr,&status)); };
+    int CloseOutfile(){ int status = 0;return(fits_close_file(_ofptr,&status)); };
     char **MakeCArgList(std::vector<std::string> &stringlist){
       char **retval = NULL;
       if(!stringlist.empty()){
@@ -177,7 +216,7 @@ namespace FitsTools {
 // 	nrows = nelem - nrows;
 // 	fits_insert_rows(this->_des.fptr, 0, nrows, &status);
 //       }
-      if(fits_write_col(this->_des->fptr,datatype,colnum,1,1,nelem, array,&status)){
+      if(fits_write_col(_ofptr,datatype,colnum,1,1,nelem, array,&status)){
 	fits_report_error(stderr,status);
 	*Out << "FitsTools::FitsImage::WriteTableColumn(): Error: Could not write FITS table column " 
 	     << this->_des->name << std::endl;
@@ -195,7 +234,7 @@ namespace FitsTools {
       if(!Out)
 	Out = &std::cout;
       int status = 0;
-      if(fits_create_tbl(this->_des->fptr, BINARY_TBL,0,nfields,
+      if(fits_create_tbl(_ofptr, BINARY_TBL,0,nfields,
 			 MakeCArgList(field_names),MakeCArgList(field_types), 
 			 MakeCArgList(field_units),
 			 extension_name.c_str(), &status)){
@@ -231,6 +270,7 @@ namespace FitsTools {
 	     << filename << std::endl;
 	return(1);
       }
+      _ofptr = this->_des->fptr;
       if (flag_verbose) {
 	*Out << "FitsTools::FitsImage::CreateFile(): Message: Opened FITS file, "
 	     << filename << std::endl;
@@ -259,6 +299,7 @@ namespace FitsTools {
 	     << filename << std::endl;
 	return(1);
       }
+      _ofptr = this->_des->fptr;
       if (flag_verbose) {
 	*Out << "FitsTools::FitsImage::Write(): Message: Opened FITS file, "
 	     << filename << std::endl;
@@ -335,13 +376,25 @@ namespace FitsTools {
 	Out = &std::cout;
       // Write primary image
       int status = 0;
-      if (fits_create_img(this->_des->fptr,FLOAT_IMG,2,this->_des->axes,&status)) {
+      if (fits_create_img(_ofptr,FLOAT_IMG,2,this->_des->axes,&status)) {
 	*Out << "FitsTools::FitsImage::WriteImage(): Error: Could not create FITS image extension."
 	     << std::endl;
 	return(1);
       }
+      std::string line;
+      std::istringstream Istr(_Headers[_des->unit]);
+      int nlines = 0;
+      while(std::getline(Istr,line)){
+	if(line.size() > 1)
+	  nlines++;
+      }
+      if (fits_set_hdrsize(_ofptr,nlines+100,&status)) {
+      	*Out << "FitsTools::FitsImage::WriteHeader(): Error: Could not reserve FITS header space for "
+      	     << nlines << " entries." << std::endl;
+      	return(1);
+      }
       // Write image data
-      if (fits_write_img(_des->fptr,TFLOAT,1,_des->npixels,_des->image,&status)) {
+      if (fits_write_img(_ofptr,TFLOAT,1,_des->npixels,_des->image,&status)) {
 	*Out << "FitsTools::FitsImage::WriteImage(): Error: Failed to write image."
 	     << std::endl;
 	return(1);
@@ -354,13 +407,18 @@ namespace FitsTools {
 	Out = &std::cout;
       int status = 0;
       if(_des->varim){
-	if (fits_create_img(this->_des->fptr,FLOAT_IMG,2,this->_des->axes,&status)) {
+	if (fits_create_img(_ofptr,FLOAT_IMG,2,this->_des->axes,&status)) {
 	  *Out << "FitsTools::FitsImage::WriteImage(): Error: Could not create FITS weight extension."
 	       << std::endl;
 	  return(1);
 	}
+	if (fits_set_hdrsize(_ofptr,100,&status)) {
+	  *Out << "FitsTools::FitsImage::WriteHeader(): Error: Could not reserve FITS header space for "
+	       << 100 << " entries." << std::endl;
+	  return(1);
+	}
 	// Write image data
-	if (fits_write_img(_des->fptr,TFLOAT,1,_des->npixels,_des->varim,&status)) {
+	if (fits_write_img(_ofptr,TFLOAT,1,_des->npixels,_des->varim,&status)) {
 	  *Out << "FitsTools::FitsImage::WriteImage(): Error: Failed to write image."
 	       << std::endl;
 	  return(1);
@@ -374,13 +432,18 @@ namespace FitsTools {
 	Out = &std::cout;
       int status = 0;
       if(_des->mask){
-	if (fits_create_img(this->_des->fptr,USHORT_IMG,2,this->_des->axes,&status)) {
+	if (fits_create_img(_ofptr,USHORT_IMG,2,this->_des->axes,&status)) {
 	  *Out << "FitsTools::FitsImage::WriteImage(): Error: Could not create FITS mask extension."
 	       << std::endl;
 	  return(1);
 	}
+	if (fits_set_hdrsize(_ofptr,100,&status)) {
+	  *Out << "FitsTools::FitsImage::WriteHeader(): Error: Could not reserve FITS header space for "
+	       << 100 << " entries." << std::endl;
+	  return(1);
+	}
 	// Write image data
-	if (fits_write_img(_des->fptr,TUSHORT,1,_des->npixels,_des->mask,&status)) {
+	if (fits_write_img(_ofptr,TUSHORT,1,_des->npixels,_des->mask,&status)) {
 	  *Out << "FitsTools::FitsImage::WriteImage(): Error: Failed to write image."
 	       << std::endl;
 	  return(1);
@@ -388,35 +451,19 @@ namespace FitsTools {
       }
       return(0);
     };
+
     int WriteHeader(unsigned int unitno)
     {
+      //      if(_profiler)
+      //	_profiler->FunctionEntry("WriteHeader");
+      double tmax = 0;
+      double tmin = 10;
       int status = 0;
       if(!Out)
 	Out = &std::cout;
       assert(unitno < _Headers.size());
-      std::string line;
       std::istringstream Istr(_Headers[unitno]);
-      int nlines = 0;
-      while(std::getline(Istr,line)){
-	if(line.size() > 1)
-	  nlines++;
-      }
-      Istr.clear();
-      Istr.str(_Headers[unitno]);
-      // Not sure if this is actually necessary but .... reserve header space
-      if (fits_set_hdrsize(this->_des->fptr,nlines+5,&status)) {
-	*Out << "FitsTools::FitsImage::WriteHeader(): Error: Could not reserve FITS header space for "
-	     << nlines << " entries." << std::endl;
-	return(1);
-      }
-      int hdrtot = 0;
-      int hdrpos = 0;
-      if (fits_get_hdrpos(_des->fptr,&hdrtot,&hdrpos,&status)) {
-	*Out << "FitsTools::FitsImage::WriteHeader(): Error: Could not get header position."
-	     << std::endl;
-	return(1);
-      }
-      nlines=1;
+      std::string line;
       std::string des_extension_type;
       while(std::getline(Istr,line)){
 	// Let's write DES_EXT last.  It looks better.
@@ -428,7 +475,7 @@ namespace FitsTools {
 	  if(x == std::string::npos)
 	    x = line.find("and Astrophysics");
 	  if(x == std::string::npos){
-	    if(fits_insert_record(_des->fptr,hdrtot+nlines++,(char *)line.c_str(),&status)){
+	    if(fits_write_record(_ofptr,const_cast<char *>(line.c_str()),&status)){
 	      *Out << "FitsTools::FitsImage::WriteHeader(): Error: Could not insert comment record into header."
 		   << std::endl;
 	    }
@@ -436,7 +483,7 @@ namespace FitsTools {
 	}
 	else if(line.substr(0,7) == "HISTORY"){
 	  //	  std::cout << "History Item: " << line.substr(8) << std::endl;
-	  if(fits_write_history(_des->fptr,(char *)line.substr(8).c_str(),&status)){
+	  if(fits_write_history(_ofptr,const_cast<char *>(line.substr(8).c_str()),&status)){
 	    *Out << "FitsTools::FitsImage::WriteHeader(): Error: Could not insert history record into header."
 		 << std::endl;
 	    return(1);
@@ -452,17 +499,16 @@ namespace FitsTools {
  	    	    Ostr << std::endl;
  	    line = Ostr.str();
  	  }
-	  if (fits_insert_record(_des->fptr,hdrtot+nlines++,
-				 (char *)line.c_str(),&status)) {
+	  if (fits_write_record(_ofptr,
+				const_cast<char *>(line.c_str()),&status)) {
 	    *Out << "FitsTools::FitsImage::WriteHeader(): Error: Could not insert record into header."
 		 << std::endl;
 	    return(1);
 	  } 
 	}
-      }							
+      }
       // Write the DES_EXT
-      if (fits_insert_record(_des->fptr,hdrtot+nlines++,
-			     (char *)des_extension_type.c_str(),&status)) {
+      if (fits_write_record(_ofptr,const_cast<char *>(des_extension_type.c_str()),&status)) {
 	*Out << "FitsTools::FitsImage::WriteHeader(): Error: Could not insert end record into header."
 	     << std::endl;
 	return(1);
@@ -474,6 +520,8 @@ namespace FitsTools {
       //	     << std::endl;
       //	return(1);
       //      }
+      //      if(_profiler)
+      //	_profiler->FunctionExit("WriteHeader");
       return(0);
     };
     int Read(const std::string &filename,int flag_verbose)
@@ -506,6 +554,7 @@ namespace FitsTools {
       }
       std::strcpy(this->_des->name,fname.c_str());
       rd_desimage(this->_des,READONLY,flag_verbose);
+      _ifptr = this->_des->fptr;
       char *zeroheader = NULL;
       int numzerokeys = 0;
       int status = 0;
@@ -516,7 +565,7 @@ namespace FitsTools {
 	*Out << "FitsTools::readImage: Found " << this->_des->hdunum << " header units." << std::endl
 	     << "FitsTools::readImage: Image unit = " << this->_des->unit << std::endl;
       for(int i = 1;i <= this->_des->hdunum;i++){
-	if (fits_movabs_hdu(this->_des->fptr,i,&hdutype,&status)) {
+	if (fits_movabs_hdu(_ifptr,i,&hdutype,&status)) {
 	  // 	sprintf(event,"Move to HDU=1 failed: %s",bias.name);
 	  // 	reportevt(flag_verbose,STATUS,5,event);
 	  // 	printerror(status);
@@ -525,7 +574,7 @@ namespace FitsTools {
 	}
 	if(flag_verbose)
 	  *Out << "FitsTools::readImage: Header(" << i << ") is of type " << hdutype << std::endl;
-	if (fits_hdr2str(this->_des->fptr,0,this->exclist,this->nexcl,&zeroheader,&numzerokeys,&status)) {
+	if (fits_hdr2str(_ifptr,0,this->exclist,this->nexcl,&zeroheader,&numzerokeys,&status)) {
 	  *Out << "FitsTools::readFitsFile could not read header information from " 
 		    << this->_des->name << "." << std::endl;
 	  return(1);
@@ -573,6 +622,7 @@ namespace FitsTools {
       }
       std::strcpy(this->_des->name,fname.c_str());
       rd_dessubimage(this->_des,&lx[0],&ux[0],READONLY,flag_verbose);
+      _ifptr = this->_des->fptr;
       char *zeroheader = NULL;
       int numzerokeys = 0;
       int status = 0;
@@ -583,7 +633,7 @@ namespace FitsTools {
 	*Out << "FitsTools::readImage: Found " << this->_des->hdunum << " header units." << std::endl
 	     << "FitsTools::readImage: Image unit = " << this->_des->unit << std::endl;
       for(int i = 1;i <= this->_des->hdunum;i++){
-	if (fits_movabs_hdu(this->_des->fptr,i,&hdutype,&status)) {
+	if (fits_movabs_hdu(_ifptr,i,&hdutype,&status)) {
 	  // 	sprintf(event,"Move to HDU=1 failed: %s",bias.name);
 	  // 	reportevt(flag_verbose,STATUS,5,event);
 	  // 	printerror(status);
@@ -592,7 +642,7 @@ namespace FitsTools {
 	}
 	if(flag_verbose)
 	  *Out << "FitsTools::readImage: Header(" << i << ") is of type " << hdutype << std::endl;
-	if (fits_hdr2str(this->_des->fptr,0,this->exclist,this->nexcl,&zeroheader,&numzerokeys,&status)) {
+	if (fits_hdr2str(_ifptr,0,this->exclist,this->nexcl,&zeroheader,&numzerokeys,&status)) {
 	  *Out << "FitsTools::readFitsFile could not read header information from " 
 		    << this->_des->name << "." << std::endl;
 	  return(1);
@@ -677,3 +727,127 @@ namespace FitsTools {
 };
 
 #endif
+
+
+// int copy_image {
+//   /* Open the input file and create output file */
+//   fits_open_file(&infptr, argv[1], READONLY, &status);
+//   fits_create_file(&outfptr, argv[2], &status);
+
+//   if (status != 0) {    
+//     fits_report_error(stderr, status);
+//     return(status);
+//   }
+
+//   fits_get_hdu_num(infptr, &hdupos);  /* Get the current HDU position */
+
+//   /* Copy only a single HDU if a specific extension was given */ 
+//   if (hdupos != 1 || strchr(argv[1], '[')) single = 1;
+
+//   for (; !status; hdupos++)  /* Main loop through each extension */
+//     {
+
+//       fits_get_hdu_type(infptr, &hdutype, &status);
+
+//       if (hdutype == IMAGE_HDU) {
+
+// 	/* get image dimensions and total number of pixels in image */
+// 	for (ii = 0; ii < 9; ii++)
+// 	  naxes[ii] = 1;
+
+// 	fits_get_img_param(infptr, 9, &bitpix, &naxis, naxes, &status);
+
+//           totpix = naxes[0] * naxes[1] * naxes[2] * naxes[3] * naxes[4]
+// 	    * naxes[5] * naxes[6] * naxes[7] * naxes[8];
+//       }
+
+//       if (hdutype != IMAGE_HDU || naxis == 0 || totpix == 0) { 
+
+// 	/* just copy tables and null images */
+// 	fits_copy_hdu(infptr, outfptr, 0, &status);
+
+//       } else {
+
+// 	/* Explicitly create new image, to support compression */
+// 	fits_create_img(outfptr, bitpix, naxis, naxes, &status);
+
+// 	/* copy all the user keywords (not the structural keywords) */
+// 	fits_get_hdrspace(infptr, &nkeys, NULL, &status); 
+
+// 	for (ii = 1; ii <= nkeys; ii++) {
+// 	  fits_read_record(infptr, ii, card, &status);
+// 	  if (fits_get_keyclass(card) > TYP_CMPRS_KEY)
+// 	    fits_write_record(outfptr, card, &status);
+// 	}
+
+// 	switch(bitpix) {
+// 	case BYTE_IMG:
+// 	  datatype = TBYTE;
+// 	  break;
+// 	case SHORT_IMG:
+// 	  datatype = TSHORT;
+// 	  break;
+// 	case LONG_IMG:
+// 	  datatype = TLONG;
+// 	  break;
+// 	case FLOAT_IMG:
+// 	  datatype = TFLOAT;
+// 	  break;
+// 	case DOUBLE_IMG:
+// 	  datatype = TDOUBLE;
+// 	  break;
+// 	}
+
+// 	bytepix = abs(bitpix) / 8;
+
+// 	npix = totpix;
+// 	iteration = 0;
+
+// 	/* try to allocate memory for the entire image */
+// 	/* use double type to force memory alignment */
+// 	array = (double *) calloc(npix, bytepix);
+
+// 	/* if allocation failed, divide size by 2 and try again */
+// 	while (!array && iteration < 10) {
+// 	  iteration++;
+// 	  npix = npix / 2;
+// 	  array = (double *) calloc(npix, bytepix);
+// 	}
+
+// 	if (!array) {
+// 	  printf("Memory allocation error\n");
+// 	  return(0);
+// 	}
+
+// 	/* turn off any scaling so that we copy the raw pixel values */
+// 	fits_set_bscale(infptr,  bscale, bzero, &status);
+// 	fits_set_bscale(outfptr, bscale, bzero, &status);
+
+// 	first = 1;
+// 	while (totpix > 0 && !status)
+//           {
+// 	    /* read all or part of image then write it back to the output file */
+// 	    fits_read_img(infptr, datatype, first, npix, 
+// 			  &nulval, array, &anynul, &status);
+
+// 	    fits_write_img(outfptr, datatype, first, npix, array, &status);
+// 	    totpix = totpix - npix;
+// 	    first  = first  + npix;
+//           }
+// 	free(array);
+//       }
+
+//       if (single) break;  /* quit if only copying a single HDU */
+//       fits_movrel_hdu(infptr, 1, NULL, &status);  /* try to move to next HDU */
+//     }
+
+//   if (status == END_OF_FILE)  status = 0; /* Reset after normal error */
+
+//   fits_close_file(outfptr,  &status);
+//   fits_close_file(infptr, &status);
+
+//   /* if error occurred, print out error message */
+//   if (status)
+//     fits_report_error(stderr, status);
+//   return(status);
+// }

@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/time.h>
 
 #include "primitive_utilities.hh"
 
@@ -65,5 +66,13 @@ namespace Sys {
     std::string empty_string;
   };
 
+  inline double
+  Time()
+  {
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    double t = tv.tv_sec + tv.tv_usec/1000000.;
+    return(t);
+  };
 };
 #endif

@@ -51,6 +51,25 @@ namespace Morph {
   typedef std::vector<Morph::IndexType> BlobType; 
   typedef std::vector<Morph::IndexType> BoxType;
 
+
+
+  ///
+  /// \brief Detect and mask bad pixel values
+  /// \param image Pointer to image data
+  /// \param mask Pointer to mask image
+  /// \param Nx Number of pixels in X
+  /// \param Ny Number of pixels in Y
+  /// \param bad_pixel_mask Mask value to set for bad pixels
+  ///
+  /// This function checks an image for nans and infs and 
+  /// sets the mask flag for detected pixels. The number of
+  /// pixels flagged is returned.
+  ///
+  int MaskBadPixelData(Morph::ImageDataType *image,
+		       Morph::MaskDataType *mask,
+		       Morph::IndexType Nx,Morph::IndexType Ny,
+		       Morph::MaskDataType bad_pixel_mask);
+
   ///
   /// \brief Basic erosion
   /// \param mask Pointer to mask image
@@ -372,6 +391,28 @@ namespace Morph {
 		std::vector<Morph::IndexType> &blob_image,
 		std::vector<std::vector<Morph::IndexType> > &blobs);
 
+  ///
+  /// \brief Create blobs of pixels with matching bitmask and not matching reject mask
+  /// \param mask Pointer to mask data
+  /// \param Nx  Indicates number of pixels in X
+  /// \param Ny  Indicates number of pixels in Y
+  /// \param BlobMask Bitmask for accepting into blob
+  /// \param RejectMask Bitmask for rejecting pixel
+  /// \param AcceptMask Bitmask for accepting pixel
+  /// \param blob_image Output image indicates blob index for each pixel (0 = not part of any blob)
+  /// \param blobs Output vector of blobs wherein each is a vector of pixels indices contained in the blob
+  ///
+  /// GetBlobs creates blobs of touching pixels whos bitmask match the
+  /// specified BlobMask.
+  ///
+  void GetBlobsWithRejection(Morph::MaskDataType *mask,
+			     Morph::IndexType Nx,Morph::IndexType Ny,
+			     Morph::MaskDataType BlobMask,
+			     Morph::MaskDataType RejectMask,
+			     Morph::MaskDataType AcceptMask,
+			     std::vector<Morph::IndexType> &blob_image,
+			     std::vector<std::vector<Morph::IndexType> > &blobs);
+
   void GetBlobBoundingBox(std::vector<Morph::IndexType> &blob,
 			  Morph::IndexType Nx,Morph::IndexType Ny,
 			  std::vector<Morph::IndexType> &box);
@@ -536,6 +577,7 @@ namespace Morph {
     }
     search_done = false;
     sdist = 0;
+    sx = x;
     while(!search_done){
       sx++;
       sdist++;
@@ -590,6 +632,84 @@ namespace Morph {
     }
     
   };
+
+  // Quick utility to grab pixel values and distances for short linear interpolation
+  //
+  // 1D Search in X and Y for the closest valid pixel whos mask is not in RejectMask
+  // or is in AcceptMask.  Record the value, and the distance (in pixels).
+  // vals [(x-1) (x+1) (y-1) (y+1) 
+//   inline void ClosestValidValuesNDir(Morph::ImageDataType *image,
+// 				     Morph::MaskDataType  *mask,
+// 				     Morph::IndexType      Nx,
+// 				     Morph::IndexType      Ny,
+// 				     Morph::IndexType      index,
+// 				     Morph::MaskDataType   RejectMask,
+// 				     Morph::MaskDataType   AcceptMask,
+// 				     std::vector<Morph::ImageDataType> &rvals,
+// 				     std::vector<Morph::IndexType>     &rdist,
+// 				     Morph::IndexType Nvals)
+//   {
+//     Morph::IndexType y = index/Nx;
+//     Morph::IndexType x = index%Nx;
+//     Morph::IndexType sx = x;
+//     Morph::IndexType sy = y;
+//     Morph::IndexType sdist = 0;
+//     Morph::IndexType curin = 0;
+//     bool search_done = false;
+//     double aval = 0.0;
+//     Morph::IndexType nvals = 0;
+//     while(!search_done && (curin < Nvals)){
+//       sx--;
+//       sdist++;
+//       if(sx < 0){
+// 	while(curin < Nvals)
+// 	  dist[curin++] = 0;
+// 	search_done = true;
+//       }
+//       else{
+// 	Morph::IndexType sindex = y*Nx+sx;
+// 	if(!(mask[sindex]&RejectMask) || (mask[sindex]&AcceptMask)){
+// 	  vals[curin++] = image[sindex];
+// 	  aval += image[sindex];
+// 	  nvals++;
+// 	  dist[curin++] = sdist;
+// 	  //	  search_done = true;
+// 	}
+//       }
+//     }
+//     if(nvals > 0)
+//       aval = aval/nvals;
+//     rval[0] = aval;
+//     rdist[0] = dist[0];
+//     search_done = false;
+//     sdist = 0;
+//     curin = 0;
+//     aval = 0;
+//     nvals = 0;
+//     while(!search_done && (curin < Nvals)){
+//       sx++;
+//       sdist++;
+//       if(sx >= Nx){
+// 	while(curin < Nvals)
+// 	  dist[Nvals+curin++] = 0;
+// 	search_done = true;
+//       }
+//       else{
+// 	Morph::IndexType sindex = y*Nx+sx;
+// 	if(!(mask[sindex]&RejectMask) || (mask[sindex]&AcceptMask)){
+// 	  vals[Nvals+curin++] = image[sindex];
+// 	  avals+=image[sindex];
+// 	  dist[Nvals+curin++] = sdist;
+// 	  //	  search_done = true;
+// 	}
+//       }
+//     }
+//     if(nvals > 0)
+//       aval /= nvals;
+//     rvals[1] = aval;
+//     rdist[1] = dist[Nvals];
+    
+//   };
   void CollideBoxes(std::vector<Morph::BoxType>   &inboxes,
 		    std::vector<Morph::BoxType>   &refboxes,
 		    std::vector<Morph::IndexType> &collision_indices,
@@ -651,6 +771,26 @@ namespace Morph {
       ii++;
     }
     return(0);
+  };
+
+  // Simple level utility that sets a bit based on image values
+  // exceeding set thresholds.
+  inline void ThresholdImage(Morph::ImageDataType *image,
+			     Morph::MaskDataType  *mask,
+			     Morph::IndexType      Nx,
+			     Morph::IndexType      Ny,
+			     Morph::ImageDataType  low_level,
+			     Morph::ImageDataType  high_level,
+			     Morph::MaskDataType   LowBit,
+			     Morph::MaskDataType   HighBit){
+
+    Morph::IndexType npix = Nx*Ny;
+    for(unsigned int i = 0;i < npix;i++){
+      if(image[i] > high_level)
+	mask[i] |= HighBit;
+      if(image[i] < low_level)
+	mask[i] |= LowBit;
+    }
   };
 };
 

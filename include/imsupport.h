@@ -5,6 +5,7 @@
 #include "archivesubs.h"
 #include "imreadsubs.h"
 #include "imarithsubs.h"
+#include "lut_utils.h"
 
 /* define event types */
 #define STATUS 33
