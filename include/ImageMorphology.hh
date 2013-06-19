@@ -50,6 +50,207 @@ namespace Morph {
   typedef Image::Stats StatType;
   typedef std::vector<Morph::IndexType> BlobType; 
   typedef std::vector<Morph::IndexType> BoxType;
+  typedef std::pair<int,int> ImageOffsetType;
+  typedef std::vector<Morph::BlobType> BlobsType;
+
+  class StructuringElement : public std::vector<Morph::ImageOffsetType>
+  {
+  public:
+    inline int Xoffset(const Morph::IndexType &index) const { return((*this)[index].first);  };
+    inline int Yoffset(const Morph::IndexType &index) const { return((*this)[index].second); };
+    Morph::IndexType NPix() const { return(this->size()); };
+    int MinXOffset() const
+    {
+      int xmin = 0;
+      std::vector<Morph::ImageOffsetType>::const_iterator it = this->begin();
+      while(it != this->end()){
+	if(it->first < xmin) xmin = it->first;
+	it++;
+      }
+      return(xmin);
+    };
+    int MaxXOffset() const
+    {
+      int xmax = 0;
+      std::vector<Morph::ImageOffsetType>::const_iterator it = this->begin();
+      while(it != this->end()){
+	if(it->first > xmax) xmax = it->first;
+	it++;
+      }
+      return(xmax);
+    };
+    int MinYOffset() const
+    {
+      int ymin = 0;
+      std::vector<Morph::ImageOffsetType>::const_iterator it = this->begin();
+      while(it != this->end()){
+	if(it->second < ymin) ymin = it->second;
+	it++;
+      }
+      return(ymin);
+    };
+    int MaxYOffset() const
+    {
+      int ymax = 0;
+      std::vector<Morph::ImageOffsetType>::const_iterator it = this->begin();
+      while(it != this->end()){
+	if(it->first > ymax) ymax = it->second;
+	it++;
+      }
+      return(ymax);
+    };
+  };  
+
+  typedef StructuringElement StructuringElementType;
+ 
+  class ImageFilter
+  {
+  public:
+    ImageFilter() : InputImageBuffer(NULL), InputMaskBuffer(NULL), 
+		    OutputImageBuffer(NULL), OutputMaskBuffer(NULL) 
+    {
+      input_image_buffer_is_mine  = false;
+      input_mask_buffer_is_mine   = false;
+      output_mask_buffer_is_mine  = false;
+      output_image_buffer_is_mine = false;
+    };
+    virtual void SetInputImageData(Morph::ImageDataType *InputImageData)  
+    {
+      if(InputImageBuffer && input_image_buffer_is_mine)
+	delete [] InputImageBuffer;
+      input_image_buffer_is_mine = false;
+      InputImageBuffer  = InputImageData; 
+    };
+    virtual void SetOutputImageData(Morph::ImageDataType *InputImageData) 
+    {
+      if(OutputImageBuffer && output_image_buffer_is_mine)
+	delete [] OutputImageBuffer;
+      output_image_buffer_is_mine = false;
+      OutputImageBuffer = InputImageData; 
+    };
+    virtual void SetInputMaskData(Morph::MaskDataType *InputImageData)   
+    { 
+      if(InputMaskBuffer && input_mask_buffer_is_mine)
+	delete [] InputMaskBuffer;
+      input_mask_buffer_is_mine = false;
+      InputMaskBuffer   = InputImageData; 
+    };
+    virtual void SetOutputMaskData(Morph::MaskDataType *InputImageData)  
+    { 
+      if(OutputMaskBuffer && output_mask_buffer_is_mine)
+	delete [] OutputMaskBuffer;
+      output_mask_buffer_is_mine = false;
+      OutputMaskBuffer  = InputImageData; 
+    };
+    virtual void Initialize()
+    {
+      if(nx > 0)
+	ny = npix/nx;
+      if(!InputImageBuffer && (npix > 0)) {
+	InputImageBuffer = new Morph::ImageDataType [npix];
+	if(!OutputImageBuffer)
+	  OutputImageBuffer = InputImageBuffer;
+	input_image_buffer_is_mine = true;
+      }
+      if(!InputMaskBuffer && (npix > 0)) {
+	InputMaskBuffer = new Morph::MaskDataType [npix];
+	if(!OutputMaskBuffer)
+	  OutputMaskBuffer = InputMaskBuffer;
+	input_mask_buffer_is_mine = true;
+      }
+      if(!OutputMaskBuffer && (npix > 0)){
+	OutputMaskBuffer = new Morph::MaskDataType [npix];
+	output_mask_buffer_is_mine = true;
+      }
+      if(!OutputImageBuffer && (npix > 0)){
+	OutputImageBuffer = new Morph::ImageDataType [npix];
+	output_image_buffer_is_mine = true;
+      }
+    };
+    virtual void Initialize(Morph::ImageDataType *InputImageData,Morph::MaskDataType *InputMaskData)
+    {
+      Destroy();
+      InputImageBuffer = InputImageData;
+      InputMaskBuffer  = InputMaskData;
+      Initialize();
+    };
+    virtual Morph::IndexType NumberOfPixelsInX() const { return(nx);      };
+    virtual Morph::IndexType NumberOfPixels()    const { return(npix);    };
+    virtual Morph::IndexType NumberOfPixelsInY() const { return(ny);      };
+    virtual void SetProcessingRejectionMask(Morph::MaskDataType InputMaskData) { ProcessingRejectionMask = InputMaskData; };
+    virtual void SetProcessingAcceptMask(Morph::MaskDataType InputMaskData)    { ProcessingAcceptMask    = InputMaskData; };
+    virtual void SetDataRejectionMask(Morph::MaskDataType InputMaskData)       { DataRejectionMask       = InputMaskData; };
+    virtual void SetDataAcceptMask(Morph::MaskDataType InputMaskData)          { DataAcceptMask          = InputMaskData; };
+    virtual void SetNumberOfPixelsInX(Morph::IndexType xsize)                  { nx                      = xsize;         };
+    virtual void SetNumberOfPixels(Morph::IndexType input_npix)                { npix                    = input_npix;    };
+    inline virtual Morph::ImageDataType &PixelValue(Morph::IndexType pixel_index) 
+    { return(InputImageBuffer[pixel_index]); };
+    inline virtual Morph::ImageDataType PixelValue(Morph::IndexType pixel_index) const
+    { return(InputImageBuffer[pixel_index]); };
+    inline virtual Morph::MaskDataType &MaskValue(Morph::IndexType pixel_index) 
+    { return(InputMaskBuffer[pixel_index]); };
+    inline virtual Morph::MaskDataType MaskValue(Morph::IndexType pixel_index) const 
+    { return(InputMaskBuffer[pixel_index]); };
+    inline virtual bool PixelIsFlagged(Morph::IndexType pixel_index,Morph::MaskDataType maskval) const
+    { return(InputMaskBuffer[pixel_index]&maskval); };
+    inline void FlagPixel(Morph::IndexType pixel_index,Morph::MaskDataType maskval) 
+    { OutputMaskBuffer[pixel_index] |= maskval; };
+    inline void SetOutputPixelValue(Morph::IndexType pixel_index,Morph::ImageDataType pixval)
+    { OutputImageBuffer[pixel_index] = pixval; };
+    inline virtual bool PixelShouldBeProcessed(Morph::IndexType pixel_index)
+    {
+      assert(pixel_index < npix);
+      return((!(InputMaskBuffer[pixel_index]&ProcessingRejectionMask)) || 
+	     InputMaskBuffer[pixel_index]&ProcessingAcceptMask);
+    };
+    inline virtual bool PixelDataIsValid(Morph::IndexType pixel_index)
+    {
+      assert(pixel_index < npix);
+      return((!(InputMaskBuffer[pixel_index]&DataRejectionMask)) || 
+	     InputMaskBuffer[pixel_index]&DataAcceptMask);
+    };
+    inline int ResolveAbsoluteOffset(const Morph::ImageOffsetType &component_offset)
+    {
+      return(component_offset.second*nx + component_offset.first);
+    };
+    virtual void Destroy()
+    {
+      input_mask_buffer_is_mine    = false;
+      output_mask_buffer_is_mine   = false;
+      input_image_buffer_is_mine   = false;
+      output_image_buffer_is_mine  = false;
+      if(InputImageBuffer && input_image_buffer_is_mine)
+	delete [] InputImageBuffer;
+      if(OutputImageBuffer && output_image_buffer_is_mine)
+	delete [] OutputImageBuffer;
+      if(InputMaskBuffer && input_mask_buffer_is_mine)
+	delete [] InputMaskBuffer;
+      if(OutputMaskBuffer && output_mask_buffer_is_mine)
+	delete [] OutputMaskBuffer;
+      InputImageBuffer  = NULL;
+      OutputImageBuffer = NULL;
+      InputMaskBuffer   = NULL;
+      OutputMaskBuffer  = NULL;
+    };
+    virtual ~ImageFilter() { Destroy(); };
+  protected:
+    Morph::ImageDataType *InputImageBuffer;
+    Morph::MaskDataType  *InputMaskBuffer;
+    Morph::ImageDataType *OutputImageBuffer;
+    Morph::MaskDataType  *OutputMaskBuffer;
+    Morph::MaskDataType   ProcessingRejectionMask;
+    Morph::MaskDataType   ProcessingAcceptMask;
+    Morph::MaskDataType   DataRejectionMask;
+    Morph::MaskDataType   DataAcceptMask;
+    Morph::IndexType      nx;
+    Morph::IndexType      ny;
+    Morph::IndexType      npix;
+  private:
+    bool input_image_buffer_is_mine;
+    bool input_mask_buffer_is_mine;
+    bool output_image_buffer_is_mine;
+    bool output_mask_buffer_is_mine;
+  };
 
 
 
