@@ -27,17 +27,28 @@
 #define RAD2DEG 57.29578
 #define MEM(st) printf("%s\n",st);system("ps aux|grep sim_ensemble");fflush(stdout);
 
-/* define BPM bit mappings */
+/* define BADPIX bit mappings */
 #define BADPIX_BPM 1          /* set in bpm (hot/dead pixel/column)        */
 #define BADPIX_SATURATE 2     /* saturated pixel                           */
-#define BADPIX_INTERP 4	      /* interpolated pixel                        */
+#define BADPIX_INTERP 4       /* interpolated pixel                        */
 #define BADPIX_THRESHOLD 0.10 /* pixels less than this fraction of sky     */
                               /* are filtered -- helps remove failed reads */
-#define BADPIX_LOW    8       /* too little signal- i.e. poor read         */
+#define BADPIX_LOW     8      /* too little signal- i.e. poor read         */
 #define BADPIX_CRAY   16      /* cosmic ray pixel                          */
 #define BADPIX_STAR   32      /* bright star pixel                         */
 #define BADPIX_TRAIL  64      /* bleed trail pixel                         */
+#define BADPIX_FIX    2048    /* a bad pixel that was fixed                */
 
+/* define BPM bit mappings */
+#define BPMDEF_FLAT_MIN 1
+#define BPMDEF_FLAT_MAX 2
+#define BPMDEF_FLAT_MASK 4
+#define BPMDEF_BIAS_HOT 8
+#define BPMDEF_BIAS_WARM 16
+#define BPMDEF_BIAS_MASK 32
+#define BPMDEF_BIAS_COL 64
+#define BPMDEF_EDGE 128
+#define BPMDEF_CORR 256
 
 /* define Image FLAVOR Check modes */
 #define CHECK_FITS 1
