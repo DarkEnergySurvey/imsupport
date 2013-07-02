@@ -123,7 +123,7 @@ int fixCol(desimage bpm,desimage output)
   double col_ave, col_rms, col_err;
   double norm_ave, norm_rms, norm_err;
   int nsat;
-  printf("Looking for correctable columns.\n");
+  printf("Fixcol: Looking for correctable columns.\n");
   //Loop over columns looking for "fixable bad columns"
   for (i=0;i<output.axes[0];++i)
     {
@@ -132,7 +132,7 @@ int fixCol(desimage bpm,desimage output)
       icol = i;
       //Check for columns with correctable pixels
       if (!(bpm.mask[js]&BPMDEF_CORR) && !(bpm.mask[jl]&BPMDEF_CORR)) continue;
-      printf("Column=%i is correctable.\n",i);
+      printf(" Fixcol: Column=%i is correctable.\n",i);
       if (colAve(icol,BPMDEF_CORR,bpm,output,&pixavg,&pixrms,&pavgerr)) 
 	{	
 	  
@@ -153,7 +153,7 @@ int fixCol(desimage bpm,desimage output)
       //non-sense correction
       if (nsat>0) 
 	{
-	  printf("Column=%i has a saturated pixel.  Skip correction.\n",i);
+	  printf(" Fixcol: Column=%i has a saturated pixel.  Skip correction.\n",i);
 	  continue;
 	}
       //column average sky level
@@ -223,7 +223,7 @@ int fixCol(desimage bpm,desimage output)
       //This is pathological and should never happen
       if (ncol!=NUMCOL) 
 	{
-	  printf("Column=%i could not be corrected because %i normal columns were not found\n",icol,NUMCOL);
+	  printf(" Fixcol: Column=%i could not be corrected because %i normal columns were not found\n",icol,NUMCOL);
 	  continue;
 	}
       //Compute weighted average of normal columns
@@ -238,19 +238,26 @@ int fixCol(desimage bpm,desimage output)
       //This is a sign of trouble in computing the column average
       if (fabs(col_rms-norm_rms)>SIGTOL*corr_err) 
 	{
-	  printf("Column=%i skipped because col_rms=%.1f disagrees with nominal=%.1f "
+	  printf(" Fixcol: Column=%i skipped because col_rms=%.1f disagrees with nominal=%.1f "
 		 "outside expected tolerance=%.1f \n",
 		 i,col_rms,norm_rms,SIGTOL*corr_err);
 	  continue;
 	}
       //Skip correction is correction is less than 5 sigma
       if (fabs(corr/corr_err)<5.0){
-	  	  printf("Column=%i skipped because correction=%.1f +/- %.1f "
+	  	  printf(" Fixcol: Column=%i skipped because correction=%.1f +/- %.1f "
 			 "is not significant\n",i,corr,corr_err);
+                  printf(" Fixcol: Unsetting BADPIX_BPM for column=%i if no other flag present in BPM\n",i);
+                  for (j=0;j<output.axes[1];++j){
+	             jo = j*output.axes[0] + i;
+                     if (bpm.mask[jo]&BPMDEF_CORR){
+                        output.mask[jo]&=~BADPIX_BPM;
+                     }
+                  }
 		  continue;
       }else{
-	  printf("Column=%i Correction=%.1f +/- %.1f \n",i,corr,corr_err);
-	  printf("   Column sky=%.1f Nominal sky=%.1f Column rms=%.1f "
+	  printf(" Fixcol: Column=%i Correction=%.1f +/- %.1f \n",i,corr,corr_err);
+	  printf(" Fixcol: Column sky=%.1f Nominal sky=%.1f Column rms=%.1f "
 		 "Nominal rms=%.1f \n",
 		 col_ave,norm_ave,col_rms,norm_rms);
 	  for (j=0;j<output.axes[1];++j){
