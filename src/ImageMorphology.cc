@@ -499,6 +499,53 @@ namespace Morph {
     }
   }
 
+
+  int GetSkyBox(Morph::ImageDataType *image,Morph::MaskDataType *mask, Morph::BoxType &image_box,
+		Morph::IndexType Nx, Morph::IndexType Ny,Morph::IndexType minpix,
+		Morph::IndexType maxiter,double ground_rejection_factor,double tol,
+		Morph::MaskDataType RejectionMask, Morph::MaskDataType AcceptMask,
+		Morph::StatType &image_stats,Morph::IndexType &npix,Morph::IndexType &niter,std::ostream *OStr)
+  {
+    // Get image statistics in box
+    Morph::BoxStats(image,mask,Nx,Ny,image_box,RejectionMask,
+		    AcceptMask,image_stats,npix);
+    niter = 0;
+    if(maxiter == 0)
+      return(0);
+    double last_mean = image_stats[Image::IMMEAN];
+    while((niter < maxiter)){ 
+      niter++;
+      Morph::ImageDataType upper_rejection_level = image_stats[Image::IMMEAN] + 
+	ground_rejection_factor*image_stats[Image::IMSIGMA];
+      Morph::ImageDataType lower_rejection_level = image_stats[Image::IMMEAN] - 
+	ground_rejection_factor*image_stats[Image::IMSIGMA];
+      // Get stats again, but reject high pixels
+      Morph::BoxStats(image,mask,Nx,Ny,image_box,RejectionMask,
+		      AcceptMask,lower_rejection_level,upper_rejection_level,
+		      image_stats,npix);
+      if(npix < minpix){
+	if(OStr){
+	  *OStr << "Morph::GetSky:Error: ran out of pixels(" << npix << ") after " << niter 
+		<< (niter==1 ? " iteration." : " iterations.") << std::endl; 
+	}
+	return(1);
+      }
+      double residual = std::abs(image_stats[Image::IMMEAN]-last_mean);
+      if(residual < tol){
+	//	if(OStr){
+	//	  *OStr << "Morph::GetSky statistics converged after NITER=" << niter 
+	//		<< (niter==1 ? " iteration." : " iterations.") << std::endl; 
+	//	}
+	return(0);
+      }
+      last_mean = image_stats[Image::IMMEAN];
+    }
+    if(OStr){
+      *OStr << "Morph::GetSky:Error: statistics did not converge after " << niter << " iterations.";
+      return(1);
+    } 
+    return(0);
+  }
   // RejectionMask typically = BADPIX_SATURATE | BADPIX_CRAY | BADPIX_BPM | BADPIX_STAR | BADPIX_TRAIL
   // AcceptMask = BADPIX_INTERP
   // tol = 1e-3
@@ -506,8 +553,8 @@ namespace Morph {
   int GetSky(Morph::ImageDataType *image,Morph::MaskDataType *mask, Morph::IndexType Nx, Morph::IndexType Ny,
 	     Morph::IndexType minpix,Morph::IndexType maxiter,double ground_rejection_factor,double tol,
 	     Morph::MaskDataType RejectionMask, Morph::MaskDataType AcceptMask,
-	     Morph::StatType &image_stats,Morph::IndexType &npix,Morph::IndexType &niter,std::ostream *OStr){
-    
+	     Morph::StatType &image_stats,Morph::IndexType &npix,Morph::IndexType &niter,std::ostream *OStr)
+  { 
     Morph::BoxType image_box(4,0);
     image_box[0] = 0;
     image_box[1] = Nx-1;

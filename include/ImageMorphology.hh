@@ -535,7 +535,11 @@ namespace Morph {
 	     Morph::IndexType minpix,Morph::IndexType maxiter,double ground_rejection_factor,double tol,
 	     Morph::MaskDataType RejectionMask, Morph::MaskDataType AcceptMask,
 	     Morph::StatType &image_stats,Morph::IndexType &npix,Morph::IndexType &niter,std::ostream *OStr=NULL);
-
+  int GetSkyBox(Morph::ImageDataType *image,Morph::MaskDataType *mask, Morph::BoxType &box,Morph::IndexType Nx, 
+		Morph::IndexType Ny,Morph::IndexType minpix,Morph::IndexType maxiter,double ground_rejection_factor,double tol,
+		Morph::MaskDataType RejectionMask, Morph::MaskDataType AcceptMask,
+		Morph::StatType &image_stats,Morph::IndexType &npix,Morph::IndexType &niter,std::ostream *OStr=NULL);
+  
   ///
   /// \brief Trim structuring element for image borders
   /// \param index Indicates pixel being processed (i.e. "the center")
