@@ -525,7 +525,7 @@ namespace Morph {
 		      image_stats,npix);
       if(npix < minpix){
 	if(OStr){
-	  *OStr << "Morph::GetSky:Error: ran out of pixels(" << npix << ") after " << niter 
+	  *OStr << "Morph::GetSkyBox:Error: ran out of pixels(" << npix << ") after " << niter 
 		<< (niter==1 ? " iteration." : " iterations.") << std::endl; 
 	}
 	return(1);
@@ -541,7 +541,7 @@ namespace Morph {
       last_mean = image_stats[Image::IMMEAN];
     }
     if(OStr){
-      *OStr << "Morph::GetSky:Error: statistics did not converge after " << niter << " iterations.";
+      *OStr << "Morph::GetSkyBox:Error: statistics did not converge after " << niter << " iterations.";
       return(1);
     } 
     return(0);
@@ -571,11 +571,15 @@ namespace Morph {
     double last_mean = image_stats[Image::IMMEAN];
     while((niter < maxiter)){ 
       niter++;
-      Morph::ImageDataType ground_rejection_level = image_stats[Image::IMMEAN] + 
+      Morph::ImageDataType upper_rejection_level = image_stats[Image::IMMEAN] + 
 	ground_rejection_factor*image_stats[Image::IMSIGMA];
+      Morph::ImageDataType lower_rejection_level = image_stats[Image::IMMEAN] - 
+	ground_rejection_factor*image_stats[Image::IMSIGMA];
+      if(lower_rejection_level < 0) 
+	lower_rejection_level = 0;
       // Get stats again, but reject high pixels
       Morph::BoxStats(image,mask,Nx,Ny,image_box,RejectionMask,
-		      AcceptMask,0,ground_rejection_level,
+		      AcceptMask,lower_rejection_level,upper_rejection_level,
 		      image_stats,npix);
       if(npix < minpix){
 	if(OStr){
