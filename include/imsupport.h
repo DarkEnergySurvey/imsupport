@@ -6,6 +6,7 @@
 #include "imreadsubs.h"
 #include "imarithsubs.h"
 #include "lut_utils.h"
+#include "mask_utils.h"
 
 /* define event types */
 #define STATUS 33
@@ -38,6 +39,9 @@
 #define BADPIX_CRAY   16      /* cosmic ray pixel                          */
 #define BADPIX_STAR   32      /* bright star pixel                         */
 #define BADPIX_TRAIL  64      /* bleed trail pixel                         */
+#define BADPIX_EDGEBLEED 128  /* edge bleed pixel                          */
+#define BADPIX_SSXTALK 256    /* pixel potentially effected by xtalk from super-saturated source */
+#define BADPIX_EDGE   512     /* pixel flagged to exclude CCD glowing edges */
 #define BADPIX_FIX    2048    /* a bad pixel that was fixed                */
 
 /* define BPM bit mappings */

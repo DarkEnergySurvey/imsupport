@@ -107,7 +107,8 @@ namespace Morph {
   {
   public:
     ImageFilter() : InputImageBuffer(NULL), InputMaskBuffer(NULL), 
-		    OutputImageBuffer(NULL), OutputMaskBuffer(NULL) 
+		    OutputImageBuffer(NULL), OutputMaskBuffer(NULL),
+		    ReferenceMaskBuffer(NULL)
     {
       input_image_buffer_is_mine  = false;
       input_mask_buffer_is_mine   = false;
@@ -134,6 +135,10 @@ namespace Morph {
 	delete [] InputMaskBuffer;
       input_mask_buffer_is_mine = false;
       InputMaskBuffer   = InputImageData; 
+    };
+    virtual void SetReferenceMaskData(Morph::MaskDataType *InputImageData)   
+    { 
+      ReferenceMaskBuffer   = InputImageData; 
     };
     virtual void SetOutputMaskData(Morph::MaskDataType *InputImageData)  
     { 
@@ -179,6 +184,7 @@ namespace Morph {
     virtual Morph::IndexType NumberOfPixelsInY() const { return(ny);      };
     virtual void SetProcessingRejectionMask(Morph::MaskDataType InputMaskData) { ProcessingRejectionMask = InputMaskData; };
     virtual void SetProcessingAcceptMask(Morph::MaskDataType InputMaskData)    { ProcessingAcceptMask    = InputMaskData; };
+    virtual void SetReferenceMask(Morph::MaskDataType InputMaskData)           { ReferenceMask           = InputMaskData; };
     virtual void SetDataRejectionMask(Morph::MaskDataType InputMaskData)       { DataRejectionMask       = InputMaskData; };
     virtual void SetDataAcceptMask(Morph::MaskDataType InputMaskData)          { DataAcceptMask          = InputMaskData; };
     virtual void SetNumberOfPixelsInX(Morph::IndexType xsize)                  { nx                      = xsize;         };
@@ -193,6 +199,13 @@ namespace Morph {
     { return(InputMaskBuffer[pixel_index]); };
     inline virtual bool PixelIsFlagged(Morph::IndexType pixel_index,Morph::MaskDataType maskval) const
     { return(InputMaskBuffer[pixel_index]&maskval); };
+    inline virtual bool ReferenceIsFlagged(Morph::IndexType pixel_index) const
+    { if(ReferenceMaskBuffer){
+	return(ReferenceMaskBuffer[pixel_index]&ReferenceMask);
+      } else {
+	return(false); 
+      }
+    };
     inline void FlagPixel(Morph::IndexType pixel_index,Morph::MaskDataType maskval) 
     { OutputMaskBuffer[pixel_index] |= maskval; };
     inline void SetOutputPixelValue(Morph::IndexType pixel_index,Morph::ImageDataType pixval)
@@ -238,10 +251,12 @@ namespace Morph {
     Morph::MaskDataType  *InputMaskBuffer;
     Morph::ImageDataType *OutputImageBuffer;
     Morph::MaskDataType  *OutputMaskBuffer;
+    Morph::MaskDataType  *ReferenceMaskBuffer;
     Morph::MaskDataType   ProcessingRejectionMask;
     Morph::MaskDataType   ProcessingAcceptMask;
     Morph::MaskDataType   DataRejectionMask;
     Morph::MaskDataType   DataAcceptMask;
+    Morph::MaskDataType   ReferenceMask;
     Morph::IndexType      nx;
     Morph::IndexType      ny;
     Morph::IndexType      npix;
@@ -535,7 +550,11 @@ namespace Morph {
 	     Morph::IndexType minpix,Morph::IndexType maxiter,double ground_rejection_factor,double tol,
 	     Morph::MaskDataType RejectionMask, Morph::MaskDataType AcceptMask,
 	     Morph::StatType &image_stats,Morph::IndexType &npix,Morph::IndexType &niter,std::ostream *OStr=NULL);
-
+  int GetSkyBox(Morph::ImageDataType *image,Morph::MaskDataType *mask, Morph::BoxType &box,Morph::IndexType Nx, 
+		Morph::IndexType Ny,Morph::IndexType minpix,Morph::IndexType maxiter,double ground_rejection_factor,double tol,
+		Morph::MaskDataType RejectionMask, Morph::MaskDataType AcceptMask,
+		Morph::StatType &image_stats,Morph::IndexType &npix,Morph::IndexType &niter,std::ostream *OStr=NULL);
+  
   ///
   /// \brief Trim structuring element for image borders
   /// \param index Indicates pixel being processed (i.e. "the center")
