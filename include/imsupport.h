@@ -42,6 +42,7 @@
 #define BADPIX_EDGEBLEED 128  /* edge bleed pixel                          */
 #define BADPIX_SSXTALK 256    /* pixel potentially effected by xtalk from super-saturated source */
 #define BADPIX_EDGE   512     /* pixel flagged to exclude CCD glowing edges */
+#define BADPIX_STREAK 1024    /* pixel associated with satellite (airplane/meteor) streak     */
 #define BADPIX_FIX    2048    /* a bad pixel that was fixed                */
 
 /* define BPM bit mappings */
