@@ -220,7 +220,234 @@ namespace Morph {
       }
     }
   }
-				      
+	
+
+  
+  void DilateMaskX(Morph::MaskDataType *mask,
+		  Morph::IndexType Nx,
+		  Morph::IndexType Ny,
+		  std::vector<Morph::IndexType> &structuring_element,
+		  Morph::IndexType length_check,
+		  Morph::MaskDataType BitMask)
+  {
+    // RAG:
+    // DilateMaskX is a special case created to only dilate in the X-direction... 
+    // and to only do so when it is likely that the structure is large (in the Y-direction)
+    // Note, no attention has yet been paid to the "slow" parts that walk the border
+    // 
+    // Set up by getting image size, copying current mask, and determining borders 
+    // for the structuring element to speed up the loops.
+    //    Morph::IndexType Nx = image->axes[0];
+    //    Morph::IndexType Ny = image->axes[1];
+    Morph::IndexType npixels = Nx*Ny;
+    Morph::IndexType npix_struct = 0;
+    Morph::IndexType border_y_minus = 0;
+    Morph::IndexType border_y_plus  = 0;
+    Morph::IndexType border_x_minus = 0;
+    Morph::IndexType border_x_plus  = 0;
+    std::vector<Morph::MaskDataType> temp_mask(&mask[0],&mask[npixels-1]);
+    Morph::GetSEAttributes(structuring_element,Nx,npix_struct,border_y_minus,
+			   border_y_plus,border_x_minus,border_x_plus);
+
+    // RAG: setup variables used to check for long bleed trails in adjacent columns 
+    // 
+    long trail_check,iyp1,iyp2,iyp3,tcm1,tcm2,tcm3,tcm4,tcm5,tcm6,tcp1,tcp2,tcp3,tcp4,tcp5,tcp6,Bit_criter;
+
+    trail_check=length_check/3;
+//    std::cout << " length_check=" << length_check << " trail_check=" << trail_check << " " << std::endl;
+    tcp6=6*trail_check*Nx;
+    tcp5=5*trail_check*Nx;
+    tcp4=4*trail_check*Nx;
+    tcp3=3*trail_check*Nx;
+    tcp2=2*trail_check*Nx;
+    tcp1=1*trail_check*Nx;
+    tcm1=-1*trail_check*Nx;
+    tcm2=-2*trail_check*Nx;
+    tcm3=-3*trail_check*Nx;
+    tcm4=-4*trail_check*Nx;
+    tcm5=-5*trail_check*Nx;
+    tcm6=-6*trail_check*Nx;
+    iyp1=trail_check;
+    iyp2=2*trail_check;
+    iyp3=3*trail_check;
+    Bit_criter=3*BitMask;
+
+    // Do the slow parts (i.e. parts near image borders)
+    //
+    // Slow Part 1 [1:Nx,1:border_y]
+    if(border_y_minus > 0){
+      for(Morph::IndexType y = 0;y < border_y_minus;y++){
+	for(Morph::IndexType x = 0;x < Nx;x++){
+	  Morph::IndexType index = y*Nx + x;
+	  std::vector<Morph::IndexType>::iterator selIt = 
+	    structuring_element.begin();
+	  while(selIt != structuring_element.end() && !(mask[index]&BitMask)){
+	    Morph::IndexType ind = index + *selIt++;
+	    if((ind >= 0) && (ind < npixels))
+	      mask[index] |= (temp_mask[ind]&BitMask);
+	  }
+	}
+      }
+    }
+    // Slow Part 2.1 [1:border_x,border_y_minus:Ny-border_y_plus]
+    if(border_x_minus > 0){
+      Morph::IndexType ylimit = Ny - border_y_plus;
+      for(Morph::IndexType y = border_y_minus;y < ylimit;y++){
+	for(Morph::IndexType x = 0;x < border_x_minus;x++){
+	  Morph::IndexType index = y*Nx + x;
+	  std::vector<Morph::IndexType>::iterator selIt = 
+	    structuring_element.begin();
+	  while(selIt != structuring_element.end() && !(mask[index]&BitMask)){
+	    Morph::IndexType ind = index + *selIt++;
+	    if((ind >= 0) && (ind < npixels))
+	      mask[index] |= (temp_mask[ind]&BitMask);
+	  }
+	}
+      }
+    }
+    // Slow Part 2.2 [Nx-border_x:Nx,border_y:Ny-border_y]
+    if(border_x_plus > 0){
+      Morph::IndexType ylimit = Ny - border_y_plus;
+      for(Morph::IndexType y = border_y_minus;y < ylimit;y++){
+	for(Morph::IndexType x = (Nx-border_x_plus);x < Nx;x++){
+	  Morph::IndexType index = y*Nx + x;
+	  std::vector<Morph::IndexType>::iterator selIt = structuring_element.begin();
+	  while(selIt != structuring_element.end() && !(mask[index]&BitMask)){
+	    Morph::IndexType ind = index + *selIt++;
+	    if((ind >= 0) && (ind < npixels))
+	      mask[index] |= (temp_mask[ind]&BitMask);
+	  }
+	}
+      }
+    }
+    // Slow Part 3 [1:Nx,Ny-border_y:Ny]
+    if(border_y_plus > 0){
+      for(Morph::IndexType y = (Ny-border_y_plus);y < Ny;y++){
+	for(Morph::IndexType x = 0;x < Nx;x++){
+	  Morph::IndexType index = y*Nx + x;
+	  std::vector<Morph::IndexType>::iterator selIt = structuring_element.begin();
+	  while(selIt != structuring_element.end() && !(mask[index]&BitMask)){
+	    Morph::IndexType ind = index + *selIt++;
+	    if((ind >= 0) && (ind < npixels))
+	      mask[index] |= (temp_mask[ind]&BitMask);
+	  }
+	}
+      }
+    }
+    // Fast Part, main part of image [border_x:Nx-border_x,border_y:Ny-border_y]
+    // RAG: begin hack to check for a long bleed trail in the adjacent row before dilating the mask
+
+    if(border_y_minus > 0 || border_y_plus > 0 ||
+       border_x_minus > 0 || border_x_plus > 0){
+      Morph::IndexType ylimit = Ny-border_y_plus;
+      Morph::IndexType xlimit = Nx-border_x_plus;
+      for(Morph::IndexType y = border_y_minus; y < ylimit;y++){
+	for(Morph::IndexType x = border_x_minus;x < xlimit;x++){
+	  Morph::IndexType index = y*Nx + x;
+	  std::vector<Morph::IndexType>::iterator selIt = structuring_element.begin();
+	  while(selIt != structuring_element.end() && !(mask[index]&BitMask)){
+//	     if ((x>760)&&(x<800)&&(y==3420)){	
+//               std::cout << "# " << x << " " << y << " " << index << " "
+//                << (((temp_mask[index+*selIt+tcp3]&BitMask)+(temp_mask[index+*selIt+tcp2]&BitMask)+
+//                    (temp_mask[index+*selIt+tcp1]&BitMask)+(temp_mask[index+*selIt+tcm1]&BitMask)+
+//                    (temp_mask[index+*selIt+tcm2]&BitMask)+(temp_mask[index+*selIt+tcm3]&BitMask))/BitMask) << std::endl;
+//             }
+             if ((y>(iyp3-1))&&(y<(Ny-iyp3))){
+//               if (x == 500){std::cout << "# Main condition: " << y << " " << (index+*selIt+tcp3) << " " << (index+*selIt+tcm3) << " " << (Nx*Ny) << std::endl;}
+               if (((temp_mask[index+*selIt+tcp3]&BitMask)+
+                    (temp_mask[index+*selIt+tcp2]&BitMask)+
+                    (temp_mask[index+*selIt+tcp1]&BitMask)+
+                    (temp_mask[index+*selIt+tcm1]&BitMask)+
+                    (temp_mask[index+*selIt+tcm2]&BitMask)+
+                    (temp_mask[index+*selIt+tcm3]&BitMask))>Bit_criter){
+                  mask[index] |= (temp_mask[index+*selIt++]&BitMask);
+                }else{
+                  *selIt++;
+                }
+             }else if(y>(Ny-iyp1-1)){
+//               if (x == 500){std::cout << "# Y > Ny-iyp1: " << y << " " << (index+*selIt+tcp1) << " " << (Nx*Ny) << std::endl;}
+               if (((temp_mask[index+*selIt+tcm6]&BitMask)+
+                    (temp_mask[index+*selIt+tcm5]&BitMask)+
+                    (temp_mask[index+*selIt+tcm4]&BitMask)+
+                    (temp_mask[index+*selIt+tcm1]&BitMask)+
+                    (temp_mask[index+*selIt+tcm2]&BitMask)+
+                    (temp_mask[index+*selIt+tcm3]&BitMask))>Bit_criter){
+                  mask[index] |= (temp_mask[index+*selIt++]&BitMask);
+                }else{
+                  *selIt++;
+                }
+             }else if(y>(Ny-iyp2-1)){
+//               if (x == 500){std::cout << "# Y > Ny-iyp2: " << y << " " << (index+*selIt+tcp2) << " " << (Nx*Ny) << std::endl;}
+               if (((temp_mask[index+*selIt+tcm5]&BitMask)+
+                    (temp_mask[index+*selIt+tcm4]&BitMask)+
+                    (temp_mask[index+*selIt+tcp1]&BitMask)+
+                    (temp_mask[index+*selIt+tcm1]&BitMask)+
+                    (temp_mask[index+*selIt+tcm2]&BitMask)+
+                    (temp_mask[index+*selIt+tcm3]&BitMask))>Bit_criter){
+                  mask[index] |= (temp_mask[index+*selIt++]&BitMask);
+                }else{
+                  *selIt++;
+                }
+             }else if(y>(Ny-iyp3-1)){
+//               if (x == 500){std::cout << "# Y > Ny-iyp3: " << y << " " << (index+*selIt+tcp3) << " " << (Nx*Ny) << std::endl;}
+               if (((temp_mask[index+*selIt+tcm4]&BitMask)+
+                    (temp_mask[index+*selIt+tcp2]&BitMask)+
+                    (temp_mask[index+*selIt+tcp1]&BitMask)+
+                    (temp_mask[index+*selIt+tcm1]&BitMask)+
+                    (temp_mask[index+*selIt+tcm2]&BitMask)+
+                    (temp_mask[index+*selIt+tcm3]&BitMask))>Bit_criter){
+                  mask[index] |= (temp_mask[index+*selIt++]&BitMask);
+                }else{
+                  *selIt++;
+                }
+//             }else if((y>iyp2)&&(y<iyp3+1)){
+             }else if(y>(iyp2-1)){
+//               if (x == 500){std::cout << "# Y > iyp2-1: " << y << " " << (index+*selIt+tcm3) << " " << (Nx*Ny) << std::endl;}
+               if (((temp_mask[index+*selIt+tcp3]&BitMask)+
+                    (temp_mask[index+*selIt+tcp2]&BitMask)+
+                    (temp_mask[index+*selIt+tcp1]&BitMask)+
+                    (temp_mask[index+*selIt+tcm1]&BitMask)+
+                    (temp_mask[index+*selIt+tcm2]&BitMask)+
+                    (temp_mask[index+*selIt+tcp4]&BitMask))>Bit_criter){
+                  mask[index] |= (temp_mask[index+*selIt++]&BitMask);
+                }else{
+                  *selIt++;
+                }
+//             }else if((y>iyp1)&&(y<iyp2+1)){
+             }else if(y>(iyp1-1)){
+//               if (x == 500){std::cout << "# Y > iyp1-1: " << y << " " << (index+*selIt+tcm2) << " " << (Nx*Ny) << std::endl;}
+               if (((temp_mask[index+*selIt+tcp3]&BitMask)+
+                    (temp_mask[index+*selIt+tcp2]&BitMask)+
+                    (temp_mask[index+*selIt+tcp1]&BitMask)+
+                    (temp_mask[index+*selIt+tcm1]&BitMask)+
+                    (temp_mask[index+*selIt+tcp4]&BitMask)+
+                    (temp_mask[index+*selIt+tcp5]&BitMask))>Bit_criter){
+                  mask[index] |= (temp_mask[index+*selIt++]&BitMask);
+                }else{
+                  *selIt++;
+                }
+             }else if(y<iyp1){
+//               if (x == 500){std::cout << "# Y < iyp1: " << y << " " << (index+*selIt+tcm1) << " " << (Nx*Ny) << std::endl;}
+               if (((temp_mask[index+*selIt+tcp3]&BitMask)+
+                    (temp_mask[index+*selIt+tcp2]&BitMask)+
+                    (temp_mask[index+*selIt+tcp1]&BitMask)+
+                    (temp_mask[index+*selIt+tcp4]&BitMask)+
+                    (temp_mask[index+*selIt+tcp5]&BitMask)+
+                    (temp_mask[index+*selIt+tcp6]&BitMask))>Bit_criter){
+                  mask[index] |= (temp_mask[index+*selIt++]&BitMask);
+                }else{
+                  *selIt++;
+                }
+             }
+          } // end loop over structuring element 
+	}
+      }
+    }
+  }
+	
+
+
+			      
   void ErodeMask(Morph::MaskDataType *mask,
 		 Morph::IndexType Nx,
 		 Morph::IndexType Ny,
