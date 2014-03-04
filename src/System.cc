@@ -191,105 +191,108 @@ namespace Sys {
 	rv.push_back(tok);
   }
 
-  Environment::Environment()
-  {
-    this->init();
-  }
+// #if 0
+//   Environment::Environment()
+//   {
+//     this->init();
+//   }
   
-  void 
-  Environment::init()
-  {
-    this->clear();
-    std::vector<std::string> raw_env;
-    Util::Vectorize(raw_env,(const char **)environ);
-    std::vector<std::string>::iterator rei = raw_env.begin();
-    while(rei != raw_env.end()){
-      unsigned int x = (*rei).find("=");
-      std::string var((*rei).substr(0,x));
-      std::string val((*rei).substr(x+1));
-      this->push_back(make_pair(var,val));
-      rei++;
-    }
-  }
+//   void 
+//   Environment::init()
+//   {
+//     this->clear();
+//     std::vector<std::string> raw_env;
+//     Util::Vectorize(raw_env,(const char **)environ);
+//     std::vector<std::string>::iterator rei = raw_env.begin();
+//     while(rei != raw_env.end()){
+//       unsigned int x = (*rei).find("=");
+//       std::string var((*rei).substr(0,x));
+//       std::string val((*rei).substr(x+1));
+//       this->push_back(make_pair(var,val));
+//       rei++;
+//     }
+//   }
 
-  int
-  Environment::SetEnv(const std::string &var,const std::string &val,bool ow)
-  {
-    int retVal = setenv(var.c_str(),val.c_str(),(int)ow);
-    this->init();
-    return(retVal);
-  }
+//   int
+//   Environment::SetEnv(const std::string &var,const std::string &val,bool ow)
+//   {
+//     int retVal = setenv(var.c_str(),val.c_str(),(int)ow);
+//     this->init();
+//     return(retVal);
+//   }
 
-  void
-  Environment::UnSetEnv(const std::string &var)
-  {
-    unsetenv(var.c_str());
-    this->init();
-  }
+//   void
+//   Environment::UnSetEnv(const std::string &var)
+//   {
+//     unsetenv(var.c_str());
+//     this->init();
+//   }
   
-#ifndef DARWIN
-  int
-  Environment::ClearEnv()
-  {
-    clearenv();
-    this->init();
-    return(1);
-  }
-#endif
+//   //#ifndef DARWIN
+//   //#if  0
+//   int
+//   Environment::ClearEnv()
+//   {
+//     clearenv();
+//     this->init();
+//     return(1);
+//   }
+//   //#endif
 
-  const std::string 
-  Environment::GetEnv(const std::string &var) const
-  {
-    Environment::const_iterator ei = this->begin();
-    while(ei != this->end()){
-      if((*ei).first == var)
-	return((*ei).second);
-      ei++;
-    }
-    return(std::string(""));
-  }
+//   const std::string 
+//   Environment::GetEnv(const std::string &var) const
+//   {
+//     Environment::const_iterator ei = this->begin();
+//     while(ei != this->end()){
+//       if((*ei).first == var)
+// 	return((*ei).second);
+//       ei++;
+//     }
+//     return(std::string(""));
+//   }
   
-  std::string &
-  Environment::GetEnv(const std::string &var)
-  {
-    Environment::iterator ei = this->begin();
-    while(ei != this->end()){
-      if((*ei).first == var)
-	return((*ei).second);
-      ei++;
-    }
-    empty_string.clear();
-    return(empty_string);
-  }
+//   std::string &
+//   Environment::GetEnv(const std::string &var)
+//   {
+//     Environment::iterator ei = this->begin();
+//     while(ei != this->end()){
+//       if((*ei).first == var)
+// 	return((*ei).second);
+//       ei++;
+//     }
+//     empty_string.clear();
+//     return(empty_string);
+//   }
   
-  int
-  Environment::PutEnv(char *envs)
-  {
-    int retVal = putenv(envs);
-    this->init();
-    return(retVal);
-  }
+//   int
+//   Environment::PutEnv(char *envs)
+//   {
+//     int retVal = putenv(envs);
+//     this->init();
+//     return(retVal);
+//   }
   
-  void
-  Environment::Refresh()
-  {
-    this->init();
-  }
+//   void
+//   Environment::Refresh()
+//   {
+//     this->init();
+//   }
   
-  char **
-  Environment::GetRawEnv()
-  {
-    return(environ);
-  }
+//   char **
+//   Environment::GetRawEnv()
+//   {
+//     return(environ);
+//   }
 
-  std::ostream& operator<<(std::ostream &output,const Environment &env)
-  {
-    std::vector< std::pair<std::string,std::string> >::const_iterator ei = env.begin();
-    while(ei != env.end()){
-      output << (*ei).first << " = " << (*ei).second << std::endl;
-      ei++;
-    }
-    return(output);
-  }
-  
+//   std::ostream& operator<<(std::ostream &output,const Environment &env)
+//   {
+//     std::vector< std::pair<std::string,std::string> >::const_iterator ei = env.begin();
+//     while(ei != env.end()){
+//       output << (*ei).first << " = " << (*ei).second << std::endl;
+//       ei++;
+//     }
+//     return(output);
+//   }
+// #endif  
+
 };
