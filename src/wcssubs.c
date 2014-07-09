@@ -17,6 +17,7 @@
 */
 
 //#include "imageproc.h"
+#include "fits/fitscat.h"
 #include "imsupport.h"
 #include "fitswcs.h"
 #include "define.h"
