@@ -5,10 +5,9 @@ DIRS=lib include ups src
 #
 #  PREFIX is used solely for the install target, right?
 #
+# Set PREFIX to "." in undefined -- FM
 ifndef PREFIX
-   ifdef DES_HOME
-       PREFIX=${DES_HOME}
-   endif 
+  export PREFIX=.
 endif
 
 #
