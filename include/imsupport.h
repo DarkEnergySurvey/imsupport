@@ -46,15 +46,15 @@
 #define BADPIX_FIX    2048    /* a bad pixel that was fixed                */
 
 /* define BPM bit mappings */
-#define BPMDEF_FLAT_MIN 1
-#define BPMDEF_FLAT_MAX 2
-#define BPMDEF_FLAT_MASK 4
-#define BPMDEF_BIAS_HOT 8
-#define BPMDEF_BIAS_WARM 16
-#define BPMDEF_BIAS_MASK 32
-#define BPMDEF_BIAS_COL 64
-#define BPMDEF_EDGE 128
-#define BPMDEF_CORR 256
+#define BPMDEF_FLAT_MIN 1     /* Pixels that are dull in the flats. */
+#define BPMDEF_FLAT_MAX 2     /* Pixels that are hot in the flats. */
+#define BPMDEF_FLAT_MASK 4    /* Pixels that are in the BPM for the flats. */
+#define BPMDEF_BIAS_HOT 8     /* Pixels that are hot in the biases. */
+#define BPMDEF_BIAS_WARM 16   /* Pixels that are warm in the biases. */
+#define BPMDEF_BIAS_MASK 32   /* Pixels that are in the BPM for the biases. */
+#define BPMDEF_BIAS_COL 64    /* Pixels that are downstream of a hot pixel in the bias. */
+#define BPMDEF_EDGE 128       /* Pixels on the glowing edges of the CCD. */
+#define BPMDEF_CORR 256       /* Correctable pixels (usually downstream of hot pixels). */
 
 /* define Image FLAVOR Check modes */
 #define CHECK_FITS 1
