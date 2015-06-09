@@ -432,7 +432,9 @@ namespace FitsTools {
 	Out = &std::cout;
       int status = 0;
       if(_des->mask){
-	if (fits_create_img(_ofptr,USHORT_IMG,2,this->_des->axes,&status)) {
+//  RAG: remove/replaced June 5, 2015 to switch from unsigned to signed mask (on write)
+//	if (fits_create_img(_ofptr,USHORT_IMG,2,this->_des->axes,&status)) {
+	if (fits_create_img(_ofptr,SHORT_IMG,2,this->_des->axes,&status)) {
 	  *Out << "FitsTools::FitsImage::WriteImage(): Error: Could not create FITS mask extension."
 	       << std::endl;
 	  return(1);
@@ -443,7 +445,9 @@ namespace FitsTools {
 	  return(1);
 	}
 	// Write image data
-	if (fits_write_img(_ofptr,TUSHORT,1,_des->npixels,_des->mask,&status)) {
+//  RAG: remove/replaced June 5, 2015 to switch from unsigned to signed mask (on write)
+//	if (fits_write_img(_ofptr,TUSHORT,1,_des->npixels,_des->mask,&status)) {
+	if (fits_write_img(_ofptr,TSHORT,1,_des->npixels,_des->mask,&status)) {
 	  *Out << "FitsTools::FitsImage::WriteImage(): Error: Failed to write image."
 	       << std::endl;
 	  return(1);
