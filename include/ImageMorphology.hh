@@ -332,6 +332,29 @@ namespace Morph {
 		  std::vector<Morph::IndexType> &structuring_element,
 		  Morph::MaskDataType BitMask);
   
+  ///
+  /// \brief Basic dilation in the Y-direction
+  /// \param mask Pointer to bitmask data
+  /// \param Nx Mask size in X
+  /// \param Ny Mask size in Y
+  /// \param structuring_element Structuring element for erosion
+  /// \param BitMask The bitmask indicating which bits to dilate
+  ///
+  /// This function takes a structuring element (the structuring 
+  /// element is just a sorted list of offsets to the pixels included
+  /// in the processing) - and performs a dilation wherein any mask pixel
+  /// with the BitMask bits turned off, will turn on if any other pixel 
+  /// inside the structuring element has BitMask turned on.
+  /// If the square structuring element (i.e. one that includes just the 
+  /// 8 neighbors of the given pixel) is used, then dilation will 
+  /// cause globs of regions where BitMask is "on" to grow.
+  ///
+  void DilateMaskY(Morph::MaskDataType *mask,
+		  Morph::IndexType Nx,
+		  Morph::IndexType Ny,
+		  std::vector<Morph::IndexType> &structuring_element,
+		  Morph::MaskDataType BitMask);
+  
 
   ///
   /// \brief Basic dilation in the X-direction.

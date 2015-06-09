@@ -221,6 +221,107 @@ namespace Morph {
     }
   }
 	
+ 
+ 
+  void DilateMaskY(Morph::MaskDataType *mask,
+		  Morph::IndexType Nx,
+		  Morph::IndexType Ny,
+		  std::vector<Morph::IndexType> &structuring_element,
+		  Morph::MaskDataType BitMask)
+  {
+    // RAG:
+    // DilateMaskY special case created to only dilate in the Y-direction... 
+    // Note, no attention has yet been paid to the "slow" parts that walk the border
+    //
+    // Set up by getting image size, copying current mask, and determining borders 
+    // for the structuring element to speed up the loops.
+    //    Morph::IndexType Nx = image->axes[0];
+    //    Morph::IndexType Ny = image->axes[1];
+    Morph::IndexType npixels = Nx*Ny;
+    Morph::IndexType npix_struct = 0;
+    Morph::IndexType border_y_minus = 0;
+    Morph::IndexType border_y_plus  = 0;
+    Morph::IndexType border_x_minus = 0;
+    Morph::IndexType border_x_plus  = 0;
+    std::vector<Morph::MaskDataType> temp_mask(&mask[0],&mask[npixels-1]);
+    Morph::GetSEAttributes(structuring_element,Nx,npix_struct,border_y_minus,
+			   border_y_plus,border_x_minus,border_x_plus);
+    // Do the slow parts (i.e. parts near image borders)
+    //
+    // Slow Part 1 [1:Nx,1:border_y]
+    if(border_y_minus > 0){
+      for(Morph::IndexType y = 0;y < border_y_minus;y++){
+        for(Morph::IndexType x = 0;x < Nx;x++){
+          Morph::IndexType index = y*Nx + x;
+          std::vector<Morph::IndexType>::iterator selIt = structuring_element.begin();
+          while(selIt != structuring_element.end() && !(mask[index]&BitMask)){
+            Morph::IndexType ind = index + *selIt++;
+            if((ind >= 0) && (ind < npixels))
+              mask[index] |= (temp_mask[ind]&BitMask);
+          }
+        }
+      }
+    }
+    // Slow Part 2.1 [1:border_x,border_y_minus:Ny-border_y_plus]
+    if(border_x_minus > 0){
+      Morph::IndexType ylimit = Ny - border_y_plus;
+      for(Morph::IndexType y = border_y_minus;y < ylimit;y++){
+        for(Morph::IndexType x = 0;x < border_x_minus;x++){
+          Morph::IndexType index = y*Nx + x;
+          std::vector<Morph::IndexType>::iterator selIt = structuring_element.begin();
+          while(selIt != structuring_element.end() && !(mask[index]&BitMask)){
+            Morph::IndexType ind = index + *selIt++;
+            if((ind >= 0) && (ind < npixels))
+              mask[index] |= (temp_mask[ind]&BitMask);
+          }
+        }
+      }
+    }
+    // Slow Part 2.2 [Nx-border_x:Nx,border_y:Ny-border_y]
+    if(border_x_plus > 0){
+      Morph::IndexType ylimit = Ny - border_y_plus;
+      for(Morph::IndexType y = border_y_minus;y < ylimit;y++){
+        for(Morph::IndexType x = (Nx-border_x_plus);x < Nx;x++){
+          Morph::IndexType index = y*Nx + x;
+          std::vector<Morph::IndexType>::iterator selIt = structuring_element.begin();
+          while(selIt != structuring_element.end() && !(mask[index]&BitMask)){
+            Morph::IndexType ind = index + *selIt++;
+            if((ind >= 0) && (ind < npixels))
+              mask[index] |= (temp_mask[ind]&BitMask);
+          }
+        }
+      }
+    }
+    // Slow Part 3 [1:Nx,Ny-border_y:Ny]
+    if(border_y_plus > 0){
+      for(Morph::IndexType y = (Ny-border_y_plus);y < Ny;y++){
+        for(Morph::IndexType x = 0;x < Nx;x++){
+          Morph::IndexType index = y*Nx + x;
+          std::vector<Morph::IndexType>::iterator selIt = structuring_element.begin();
+          while(selIt != structuring_element.end() && !(mask[index]&BitMask)){
+            Morph::IndexType ind = index + *selIt++;
+            if((ind >= 0) && (ind < npixels))
+              mask[index] |= (temp_mask[ind]&BitMask);
+          }
+        }
+      }
+    }
+    // Fast Part, main part of image [border_x:Nx-border_x,border_y:Ny-border_y]
+    if(border_y_minus > 0 || border_y_plus > 0 ||
+       border_x_minus > 0 || border_x_plus > 0){
+      Morph::IndexType ylimit = Ny-border_y_plus;
+      Morph::IndexType xlimit = Nx-border_x_plus;
+      for(Morph::IndexType y = border_y_minus; y < ylimit;y++){
+        for(Morph::IndexType x = border_x_minus;x < xlimit;x++){
+          Morph::IndexType index = y*Nx + x;
+          std::vector<Morph::IndexType>::iterator selIt = structuring_element.begin();
+          while(selIt != structuring_element.end() && !(mask[index]&BitMask))
+            mask[index] |= (temp_mask[index+*selIt++]&BitMask);
+        }
+      }
+    }
+  }
+
 
   
   void DilateMaskX(Morph::MaskDataType *mask,
