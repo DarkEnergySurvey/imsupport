@@ -128,8 +128,8 @@
 #define WGT_FZDTHRSD "CHECKSUM"
 #define MSK_FZDTHRSD "CHECKSUM"
 
-#define IMG_FZQVALUE 4
+#define IMG_FZQVALUE 16
 /* #define WGT_FZQVALUE 0 */
-#define WGT_FZQVALUE 4 
-#define MSK_FZQVALUE 4
+#define WGT_FZQVALUE 16 
+#define MSK_FZQVALUE 16
 
