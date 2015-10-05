@@ -1,4 +1,4 @@
-setupRequired(cfitsio_shared 3.360+4)
-setupRequired(swarp 2.36.2+2)
+setupRequired(cfitsio_shared 3.370+0)
+setupRequired(swarp 2.38.0.1+0)
 
 

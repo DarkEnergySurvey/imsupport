@@ -13,7 +13,7 @@ STANDALONEOBJECTS=imarithsubs.o archivesubs.o catsubs.o eventsubs.o imreadsubs.o
 
 CFLAGS = -I../include -I$(CFITSIO_SHARED_DIR)/include/ -I${SWARP_DIR}/include/
 
-CPPC := 	g++
+CPPC := 	${CXX}
 CPPFLAGS:=      -g -O3 -I. -I../include -I$(CFITSIO_SHARED_DIR)/include
 CPPCOPTS :=	-c -Wall -funroll-loops -O3 -Wno-unused-variable 
 
