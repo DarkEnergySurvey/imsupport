@@ -4,21 +4,25 @@
 
 
 /* define BADPIX bit mappings (for MASK HDU) */
-#define BADPIX_BPM         1  /* set in bpm (hot/dead pixel/column)        */
-#define BADPIX_SATURATE    2  /* saturated pixel                           */
-#define BADPIX_INTERP      4  /* interpolated pixel                        */
-#define BADPIX_BADAMP      8  /* Data from non-functional amplifier        */
+#define BADPIX_BPM          1  /* set in bpm (hot/dead pixel/column)        */
+#define BADPIX_SATURATE     2  /* saturated pixel                           */
+#define BADPIX_INTERP       4  /* interpolated pixel                        */
+#define BADPIX_BADAMP       8  /* Data from non-functional amplifier        */
 #define BADPIX_LOW (BADPIX_BADAMP) /* too little signal- NOT IN USE        */
-#define BADPIX_CRAY       16  /* cosmic ray pixel                          */
-#define BADPIX_STAR       32  /* bright star pixel                         */
-#define BADPIX_TRAIL      64  /* bleed trail pixel                         */
-#define BADPIX_EDGEBLEED 128  /* edge bleed pixel                          */
-#define BADPIX_SSXTALK   256  /* pixel potentially effected by xtalk from  */
-                              /*       a super-saturated source            */
-#define BADPIX_EDGE      512  /* pixel flag to exclude CCD glowing edges   */
-#define BADPIX_STREAK   1024  /* pixel associated with streak from a       */
-                              /*       satellite, meteor, ufo...           */
-#define BADPIX_SUSPECT  2048  /* nominally useful pixel but not perfect    */
+#define BADPIX_CRAY        16  /* cosmic ray pixel                          */
+#define BADPIX_STAR        32  /* bright star pixel                         */
+#define BADPIX_TRAIL       64  /* bleed trail pixel                         */
+#define BADPIX_EDGEBLEED  128  /* edge bleed pixel                          */
+#define BADPIX_SSXTALK    256  /* pixel potentially effected by xtalk from  */
+                               /*       a super-saturated source            */
+#define BADPIX_EDGE       512  /* pixel flag to exclude CCD glowing edges   */
+#define BADPIX_STREAK    1024  /* pixel associated with streak from a       */
+                               /*       satellite, meteor, ufo...           */
+#define BADPIX_SUSPECT   2048  /* nominally useful pixel but not perfect    */
+#define BADPIX_FIXED     4096  /* corrected by pixcorrect                   */
+#define BADPIX_NEAREDGE  8192  /* suspect due to edge proximity             */
+#define BADPIX_TAPEBUMP 16384  /* suspect due to known tape bump            */
+
 #define BADPIX_FIX  (BADPIX_SUSPECT) /* a bad pixel that was fixed - DEPRECATED */
 
 /* define BPMDEF bit mappings (for BPM definition) */
