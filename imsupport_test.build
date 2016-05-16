@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+# Uncomment to use prompt
+#echo -n "Enter path to PRODUCT_DIR: "
+#read product_dir
+#export PRODUCT_DIR=$product_dir
+
+export PRODUCT_DIR=$HOME/build-test/imsupport
+echo "Will Install to: $PRODUCT_DIR"
+
+source $EUPS_DIR/desdm_eups_setup.sh
+source source_me_before_build.csh
+
+export PREFIX=$PRODUCT_DIR
+make clean
+make
+make install
+
+echo "                                               "
+echo "---------------------------------------------------------"
+echo " IMSUPPORT installed locally on $PRODUCT_DIR"
+echo " Make sure you setup by doing:"
+echo "                                               "
+echo "    setup -v -r $PRODUCT_DIR"
+echo " "
+echo "---------------------------------------------------------"
+echo " "
