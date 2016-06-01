@@ -1,3 +1,35 @@
+/*
+The *OFFICIAL* definition of DES masking bits. The masked bits are
+divided into two categories:
+
+BPMDEF -- Bits that are definited in the bad pixel mask (BPM)
+file. These bits are partially flattened when creating the mask plane
+of the reduced image.
+
+BADPIX -- Bits that are set in the mask plane of the reduced
+image. They are set from both BPM file and various image processing
+routines.
+
+Bits defined in this file can be accessed in C code with:
+
+#include "mask_bits.h"
+...
+int bit = BADPIX_BPM;
+
+Python code can interface with these bits through a shared library
+that is compiled as part of despyfits and loaded with ctypes:
+
+from despyfits import maskbits
+...
+bit = maskbits.BADPIX_BPM
+
+The shared library access to this file is what necessitates the double
+definition of each bit.
+
+$Id$
+
+*/
+
 /* RAG thinks that this file definition is on the cusp of being deletable  */
 #define BADPIX_THRESHOLD 0.10 /* pixels less than this fraction of sky     */
                               /* are filtered -- helps remove failed reads */
@@ -23,6 +55,7 @@
 #define BADPIX_NEAREDGE  8192  /* suspect due to edge proximity             */
 #define BADPIX_TAPEBUMP 16384  /* suspect due to known tape bump            */
 
+/* ADW 2015-06-01: Can this be removed? */
 #define BADPIX_FIX  (BADPIX_SUSPECT) /* a bad pixel that was fixed - DEPRECATED */
 
 /* define BPMDEF bit mappings (for BPM definition) */
@@ -44,4 +77,6 @@
                               /*        exposures.                         */
 #define BPMDEF_WACKY_PIX 2048 /* Outliers in stacked sky exposures.        */
 #define BPMDEF_BADAMP    4096 /* Pixel on non-functional amplifier         */
-#define BPMDEF_GENERIC (BPMDEF_BADAMP)/* Generic bad pixel flag - NOT IN USE*/
+
+/* ADW 2015-06-01: Can this be removed? */
+#define BPMDEF_GENERIC (BPMDEF_BADAMP)/* Generic bad pixel flag - DEPRECATED*/
