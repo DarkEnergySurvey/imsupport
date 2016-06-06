@@ -31,32 +31,6 @@
 
 #include "mask_bits.h"
 
-// #define BADPIX_BPM 1          /* set in bpm (hot/dead pixel/column)        */
-// #define BADPIX_SATURATE 2     /* saturated pixel                           */
-// #define BADPIX_INTERP 4       /* interpolated pixel                        */
-// #define BADPIX_THRESHOLD 0.10 /* pixels less than this fraction of sky     */
-//                               /* are filtered -- helps remove failed reads */
-// #define BADPIX_LOW     8      /* too little signal- i.e. poor read         */
-// #define BADPIX_CRAY   16      /* cosmic ray pixel                          */
-// #define BADPIX_STAR   32      /* bright star pixel                         */
-// #define BADPIX_TRAIL  64      /* bleed trail pixel                         */
-// #define BADPIX_EDGEBLEED 128  /* edge bleed pixel */
-// #define BADPIX_SSXTALK 256    /* pixel potentially effected by xtalk from super-saturated source */
-// #define BADPIX_EDGE   512     /* pixel flagged to exclude CCD glowing edges */
-// #define BADPIX_STREAK 1024    /* pixel associated with satellite (airplane/meteor) streak     */
-// #define BADPIX_FIX    2048    /* a bad pixel that was fixed                */
-
-/* define BPM bit mappings */
-// #define BPMDEF_FLAT_MIN 1
-// #define BPMDEF_FLAT_MAX 2
-// #define BPMDEF_FLAT_MASK 4
-// #define BPMDEF_BIAS_HOT 8
-// #define BPMDEF_BIAS_WARM 16
-// #define BPMDEF_BIAS_MASK 32
-// #define BPMDEF_BIAS_COL 64
-// #define BPMDEF_EDGE 128
-// #define BPMDEF_CORR 256
-
 /* define Image FLAVOR Check modes */
 #define CHECK_FITS 1
 #define REQUIRE_FITS 2
