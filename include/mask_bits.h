@@ -89,7 +89,7 @@ const int badpix_tapebump = BADPIX_TAPEBUMP;
 
 // a bad pixel that was fixed - DEPRECATED
 // ADW: Still used in mask_utils.c
-//#define BADPIX_FIX  (BADPIX_SUSPECT);
+#define BADPIX_FIX  (BADPIX_SUSPECT);
 //const int badpix_fix = BADPIX_FIX;
 
 // too little signal - DEPRICATED
