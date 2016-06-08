@@ -9,7 +9,8 @@ export PRODUCT_DIR=$HOME/build-test/imsupport
 echo "Will Install to: $PRODUCT_DIR"
 
 source $EUPS_DIR/desdm_eups_setup.sh
-source source_me_before_build.csh
+setup -v swarp 2.40.0+1
+setup -v cfitsio_shared 3.370+0
 
 export PREFIX=$PRODUCT_DIR
 make clean
