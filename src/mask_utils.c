@@ -266,6 +266,7 @@ int fixCol(desimage bpm,desimage output)
                 output.image[jo] -= corr;
                 output.mask[jo] &= ~BADPIX_BPM;
                 output.mask[jo] |= BADPIX_FIXED;
+                /* RAG: hacked BADPIX_FIX to BADPIX_FIXED... to accomodate update of the masks utlity */
              }
          }
       }
